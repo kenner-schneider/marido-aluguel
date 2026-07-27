@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Painel do profissional — MaridoJá</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="logo" href="/">
+      <svg viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#1E40AF"/><path d="M22.8 9.5a4.6 4.6 0 0 0-5.9 5.6l-6.6 6.6a1.9 1.9 0 0 0 2.7 2.7l6.6-6.6a4.6 4.6 0 0 0 5.6-5.9l-2.6 2.6-2.4-.7-.7-2.4 2.6-2.6z" fill="#fff"/></svg>
+      <span>Marido<em>Já</em></span>
+    </a>
+    <nav class="nav-links">
+      <a href="/">Página inicial</a>
+      <a href="/profissionais.html">Ver como cliente</a>
+      <a href="/pro.html" class="active">Painel do profissional</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container" style="max-width:960px">
+  <div class="page-head">
+    <h1>Painel do profissional</h1>
+    <p>Receba pedidos, veja quanto vai receber e controle seus horários de atendimento.</p>
+  </div>
+
+  <div class="panel" id="loginPanel" style="margin-bottom:24px">
+    <h3 style="font-size:1.05rem">Entrar no painel <span class="tag" style="vertical-align:middle">modo demonstração</span></h3>
+    <p style="color:var(--text-muted);font-size:.92rem;margin-bottom:14px">No MVP, selecione um profissional cadastrado para ver o painel dele. Na v2 entra login com senha/WhatsApp.</p>
+    <div style="display:flex;gap:12px;flex-wrap:wrap">
+      <select id="proSelect" style="max-width:320px" aria-label="Selecione o profissional"></select>
+      <button class="btn btn-primary" id="enterBtn">Entrar</button>
+    </div>
+  </div>
+
+  <div id="dashboard" hidden>
+    <div class="stat-cards" style="margin-bottom:24px">
+      <div class="stat-card"><span>Novos pedidos</span><strong id="statPending">0</strong></div>
+      <div class="stat-card"><span>A receber (confirmados)</span><strong id="statConfirmed">R$ 0</strong></div>
+      <div class="stat-card"><span>Já recebido (concluídos)</span><strong id="statCompleted">R$ 0</strong></div>
+      <div class="stat-card"><span>Serviços concluídos</span><strong id="statJobs">0</strong></div>
+    </div>
+
+    <div class="panel" style="margin-bottom:24px">
+      <h3 style="display:flex;align-items:center;gap:8px"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg> Novos pedidos <span id="pendingBadge" class="badge pendente" hidden></span></h3>
+      <p style="color:var(--text-muted);font-size:.9rem;margin-bottom:10px">Cada novo agendamento chega aqui como notificação. O valor exibido já é o seu repasse (80% do total — a plataforma fica com 20%).</p>
+      <div id="pendingList"></div>
+      <p class="empty" id="pendingEmpty" hidden>Nenhum pedido novo por enquanto. Relaxa que a gente te avisa ;)</p>
+    </div>
+
+    <div class="panel" style="margin-bottom:24px">
+      <h3>Minha agenda</h3>
+      <div id="agendaList"></div>
+      <p class="empty" id="agendaEmpty" hidden>Nenhum serviço confirmado ainda.</p>
+    </div>
+
+    <div class="panel" style="margin-bottom:48px">
+      <h3>Meus horários de atendimento</h3>
+      <p style="color:var(--text-muted);font-size:.9rem;margin-bottom:16px">Os clientes só conseguem agendar dentro dos horários que você marcar aqui.</p>
+      <div class="avail-grid" id="availGrid"></div>
+      <div id="availMsg"></div>
+      <button class="btn btn-primary" id="saveAvail" style="margin-top:16px">Salvar disponibilidade</button>
+    </div>
+  </div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+(async function () {
+  const cfg = await API.get('/api/config');
+  const serviceById = Object.fromEntries(cfg.services.map(s => [s.id, s]));
+  const pros = await API.get('/api/pros');
+
+  const proSelect = document.getElementById('proSelect');
+  pros.forEach(p => proSelect.append(new Option(`${p.name} — ${p.city}`, p.id)));
+  const savedPro = localStorage.getItem('maridoja_pro');
+  if (savedPro && pros.some(p => p.id === savedPro)) proSelect.value = savedPro;
+
+  const dashboard = document.getElementById('dashboard');
+  let current = null;
+
+  document.getElementById('enterBtn').addEventListener('click', () => {
+    current = pros.find(p => p.id === proSelect.value);
+    if (!current) return;
+    localStorage.setItem('maridoja_pro', current.id);
+    dashboard.hidden = false;
+    refresh();
+    renderAvailability();
+    dashboard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+
+  async function refresh() {
+    const [bookings, earnings] = await Promise.all([
+      API.get('/api/pro/' + encodeURIComponent(current.id) + '/bookings'),
+      API.get('/api/pro/' + encodeURIComponent(current.id) + '/earnings')
+    ]);
+
+    const pending = bookings.filter(b => b.status === 'pendente');
+    const agenda = bookings.filter(b => b.status === 'confirmado' || b.status === 'concluido');
+
+    document.getElementById('statPending').textContent = pending.length;
+    document.getElementById('statConfirmed').textContent = fmtBRL(earnings.confirmed);
+    document.getElementById('statCompleted').textContent = fmtBRL(earnings.completed);
+    document.getElementById('statJobs').textContent = earnings.jobsCompleted;
+
+    const badge = document.getElementById('pendingBadge');
+    badge.hidden = pending.length === 0;
+    badge.textContent = pending.length + (pending.length === 1 ? ' pedido' : ' pedidos');
+
+    const pendingList = document.getElementById('pendingList');
+    pendingList.innerHTML = '';
+    document.getElementById('pendingEmpty').hidden = pending.length > 0;
+    pending.forEach(b => {
+      const s = serviceById[b.serviceId];
+      const item = el(`<div class="booking-item">
+        <div>
+          <h4>${esc(s?.name || b.serviceId)} · ${fmtDate(b.date)} às ${esc(b.time)} (${b.hours}h)</h4>
+          <p class="meta">${esc(b.clientName)} · ${esc(b.clientPhone)}<br>${esc(b.address)}</p>
+          ${b.notes ? `<p class="meta" style="margin-top:4px"><em>"${esc(b.notes)}"</em></p>` : ''}
+        </div>
+        <div style="display:grid;gap:10px;justify-items:end">
+          <span class="money">Você recebe ${fmtBRL(b.payout)}</span>
+          <div class="booking-actions">
+            <button class="btn btn-primary btn-sm" data-act="accept">Aceitar</button>
+            <button class="btn btn-outline btn-sm" data-act="decline">Recusar</button>
+          </div>
+        </div>
+      </div>`);
+      item.querySelector('[data-act="accept"]').addEventListener('click', () => act(b.id, 'accept'));
+      item.querySelector('[data-act="decline"]').addEventListener('click', () => act(b.id, 'decline'));
+      pendingList.append(item);
+    });
+
+    const agendaList = document.getElementById('agendaList');
+    agendaList.innerHTML = '';
+    document.getElementById('agendaEmpty').hidden = agenda.length > 0;
+    agenda.forEach(b => {
+      const s = serviceById[b.serviceId];
+      const item = el(`<div class="booking-item">
+        <div>
+          <h4>${esc(s?.name || b.serviceId)} · ${fmtDate(b.date)} às ${esc(b.time)} (${b.hours}h)</h4>
+          <p class="meta">${esc(b.clientName)} · ${esc(b.clientPhone)} · ${esc(b.address)}</p>
+        </div>
+        <div style="display:grid;gap:8px;justify-items:end">
+          <span class="badge ${esc(b.status)}">${esc(STATUS_LABEL[b.status] || b.status)}</span>
+          <span class="money">${fmtBRL(b.payout)}</span>
+          ${b.status === 'confirmado' ? '<button class="btn btn-outline btn-sm" data-act="complete">Marcar como concluído</button>' : ''}
+        </div>
+      </div>`);
+      const btn = item.querySelector('[data-act="complete"]');
+      if (btn) btn.addEventListener('click', () => act(b.id, 'complete'));
+      agendaList.append(item);
+    });
+  }
+
+  async function act(id, action) {
+    try {
+      await API.send('/api/bookings/' + encodeURIComponent(id) + '/' + action, 'POST');
+      refresh();
+    } catch (err) {
+      alert(err.message);
+    }
+  }
+
+  // ---- disponibilidade ----
+  const availGrid = document.getElementById('availGrid');
+  function hourOptions(sel) {
+    let html = '';
+    for (let h = 6; h <= 22; h++) html += `<option value="${h}" ${h === sel ? 'selected' : ''}>${String(h).padStart(2, '0')}:00</option>`;
+    return html;
+  }
+  function renderAvailability() {
+    availGrid.innerHTML = '';
+    for (let d = 0; d < 7; d++) {
+      const av = current.availability[String(d)];
+      const row = el(`<div class="avail-row ${av ? '' : 'off'}" data-day="${d}">
+        <span class="day">${WEEKDAYS[d]}</span>
+        <label class="switch"><input type="checkbox" ${av ? 'checked' : ''} aria-label="Atende ${WEEKDAYS[d]}"><span class="track"></span></label>
+        <select data-k="start" aria-label="Início ${WEEKDAYS[d]}">${hourOptions(av ? av.start : 8)}</select>
+        <select data-k="end" aria-label="Fim ${WEEKDAYS[d]}">${hourOptions(av ? av.end : 18)}</select>
+      </div>`);
+      row.querySelector('input[type="checkbox"]').addEventListener('change', e => {
+        row.classList.toggle('off', !e.target.checked);
+      });
+      availGrid.append(row);
+    }
+  }
+
+  document.getElementById('saveAvail').addEventListener('click', async () => {
+    const payload = {};
+    availGrid.querySelectorAll('.avail-row').forEach(row => {
+      if (!row.querySelector('input[type="checkbox"]').checked) return;
+      payload[row.dataset.day] = {
+        start: parseInt(row.querySelector('[data-k="start"]').value, 10),
+        end: parseInt(row.querySelector('[data-k="end"]').value, 10)
+      };
+    });
+    const msg = document.getElementById('availMsg');
+    try {
+      const res = await API.send('/api/pro/' + encodeURIComponent(current.id) + '/availability', 'PUT', payload);
+      current.availability = res.availability;
+      renderAvailability();
+      msg.innerHTML = '<p class="notice success">Disponibilidade atualizada! Os clientes já veem os novos horários.</p>';
+    } catch (err) {
+      msg.innerHTML = `<p class="notice error">${esc(err.message)}</p>`;
+    }
+    setTimeout(() => { msg.innerHTML = ''; }, 4000);
+  });
+})();
+</script>
+</body>
+</html>

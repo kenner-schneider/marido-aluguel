@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>MaridoJá — Marido de aluguel para sua casa, sem complicação</title>
+  <meta name="description" content="A maneira mais fácil de contratar um marido de aluguel. Agende reparos, montagem de móveis, elétrica e hidráulica com profissionais avaliados.">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="logo" href="/">
+      <svg viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#1E40AF"/><path d="M22.8 9.5a4.6 4.6 0 0 0-5.9 5.6l-6.6 6.6a1.9 1.9 0 0 0 2.7 2.7l6.6-6.6a4.6 4.6 0 0 0 5.6-5.9l-2.6 2.6-2.4-.7-.7-2.4 2.6-2.6z" fill="#fff"/></svg>
+      <span>Marido<em>Já</em></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#como-funciona">Como funciona</a>
+      <a href="#precos">Preços</a>
+      <a href="/minhas-reservas.html">Minhas reservas</a>
+      <a href="/pro.html">Sou profissional</a>
+      <a href="/profissionais.html" class="btn btn-cta btn-sm">Agendar serviço</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container hero-grid">
+    <div>
+      <h1>A maneira mais fácil de contratar um <span class="accent">marido de aluguel</span> para sua casa.</h1>
+      <p class="lead">Reparos, montagem de móveis, elétrica, hidráulica e instalações — com profissionais avaliados, preço fechado por hora e agendamento 100% online.</p>
+      <form class="hero-search" id="citySearch">
+        <select id="citySelect" aria-label="Selecione sua cidade">
+          <option value="">Selecione sua cidade…</option>
+        </select>
+        <button type="submit" class="btn btn-cta">Buscar profissionais</button>
+      </form>
+      <div class="hero-rating">
+        <span class="stars" aria-hidden="true">★★★★★</span>
+        <span>4.8 estrelas — média de 610 avaliações de clientes.</span>
+      </div>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 420 340" fill="none">
+        <circle cx="210" cy="170" r="150" fill="#DBEAFE"/>
+        <rect x="120" y="120" width="180" height="130" rx="10" fill="#fff" stroke="#BFDBFE" stroke-width="3"/>
+        <path d="M110 128 L210 60 L310 128" stroke="#1E40AF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+        <rect x="185" y="185" width="50" height="65" rx="6" fill="#1E40AF"/>
+        <circle cx="226" cy="218" r="4" fill="#93C5FD"/>
+        <rect x="138" y="145" width="34" height="30" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="2"/>
+        <rect x="248" y="145" width="34" height="30" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="2"/>
+        <g transform="rotate(38 320 90)">
+          <rect x="300" y="82" width="66" height="16" rx="8" fill="#F97316"/>
+          <path d="M296 74 a16 16 0 1 0 0 32 l10 -6 v-20 z" fill="#EA580C"/>
+        </g>
+        <circle cx="95" cy="250" r="26" fill="#F97316"/>
+        <path d="M84 250 l8 8 l16 -16" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      </svg>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="como-funciona">
+  <div class="container">
+    <h2 class="section-title">É muito fácil contratar</h2>
+    <p class="section-sub">Todo o processo de agendamento, pagamento e acompanhamento do serviço é feito online, em poucos passos:</p>
+    <div class="steps">
+      <article class="step">
+        <div class="step-num">1</div>
+        <h3>Informe sua cidade e o serviço</h3>
+        <p>Diga o que precisa ser feito e mostraremos os melhores profissionais disponíveis na sua região.</p>
+      </article>
+      <article class="step">
+        <div class="step-num">2</div>
+        <h3>Escolha o profissional ideal</h3>
+        <p>Compare avaliações de outros clientes e veja os horários realmente livres na agenda de cada um.</p>
+      </article>
+      <article class="step">
+        <div class="step-num">3</div>
+        <h3>Agende e pronto!</h3>
+        <p>Escolha data, horário e duração. O profissional confirma, aparece no horário e o resto é com a gente :)</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt" id="precos">
+  <div class="container">
+    <h2 class="section-title">Preço transparente, sem surpresa</h2>
+    <p class="section-sub">Você paga por hora, com valor fechado antes de agendar. Mínimo de 1 hora por visita — e o profissional leva as próprias ferramentas.</p>
+    <div class="price-table-wrap">
+      <table class="price-table" id="priceTable">
+        <thead>
+          <tr><th>Serviço</th><th>O que está incluso</th><th>Preço</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2 class="section-title">Quem usa, recomenda</h2>
+    <p class="section-sub">Conectamos clientes e profissionais de reparos residenciais com segurança e suporte do início ao fim.</p>
+    <div class="metrics" style="margin-bottom:48px">
+      <div class="metric"><strong>+12.000</strong><span>serviços realizados pela plataforma</span></div>
+      <div class="metric"><strong>+4.500</strong><span>clientes atendidos em 5 cidades</span></div>
+      <div class="metric"><strong>93%</strong><span>das avaliações com 4 ou 5 estrelas</span></div>
+    </div>
+    <div class="testimonials">
+      <article class="testimonial">
+        <span class="stars" aria-hidden="true">★★★★★</span>
+        <p>“O Carlos chegou dez minutos antes do horário e resolveu em uma visita o que eu adiava há meses: chuveiro, tomada e a porta do quarto. Impecável.”</p>
+        <footer><div class="avatar" style="width:44px;height:44px;font-size:.9rem">AP</div><div><strong>Ana Paula</strong><span>Cliente — São Paulo/SP</span></div></footer>
+      </article>
+      <article class="testimonial">
+        <span class="stars" aria-hidden="true">★★★★★</span>
+        <p>“Como profissional, o app me dá agenda cheia sem eu correr atrás de cliente. Recebo certinho e escolho os horários em que quero trabalhar.”</p>
+        <footer><div class="avatar" style="width:44px;height:44px;font-size:.9rem">MS</div><div><strong>Márcio Souza</strong><span>Profissional — Porto Alegre/RS</span></div></footer>
+      </article>
+      <article class="testimonial">
+        <span class="stars" aria-hidden="true">★★★★★</span>
+        <p>“Ter um intermediário na contratação me deu segurança para chamar alguém que eu não conhecia. Montaram o guarda-roupa no tempo combinado.”</p>
+        <footer><div class="avatar" style="width:44px;height:44px;font-size:.9rem">GT</div><div><strong>Guilherme T.</strong><span>Cliente — Curitiba/PR</span></div></footer>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="section section-alt">
+  <div class="container">
+    <h2 class="section-title">Ficou com alguma dúvida?</h2>
+    <div class="faq" style="margin-top:36px">
+      <details>
+        <summary>Quais serviços estão inclusos?</summary>
+        <p>Reparos gerais, elétrica, hidráulica, montagem de móveis e instalações (TV, cortinas, prateleiras, quadros). Serviços de grande porte, como reformas, ficam fora do escopo.</p>
+      </details>
+      <details>
+        <summary>Como eu decido a duração do serviço?</summary>
+        <p>Na hora de agendar você escolhe quantas horas precisa (de 1 a 8). Na dúvida, descreva a tarefa no campo de observações — o profissional confirma se o tempo é suficiente.</p>
+      </details>
+      <details>
+        <summary>Posso reagendar ou cancelar o meu pedido?</summary>
+        <p>Sim. Enquanto o pedido estiver "aguardando confirmação" ou "confirmado", você pode falar com o suporte para reagendar sem custo ou pedir reembolso.</p>
+      </details>
+      <details>
+        <summary>O profissional leva as ferramentas?</summary>
+        <p>Sim, todos os profissionais parceiros trabalham com ferramentas próprias. Materiais específicos (peças, suportes, lâmpadas) ficam por conta do cliente.</p>
+      </details>
+      <details>
+        <summary>Quais as formas de pagamento?</summary>
+        <p>No MVP, o pagamento é combinado na conclusão do serviço. Em breve: cartão de crédito e Pix direto na plataforma, com repasse automático ao profissional.</p>
+      </details>
+      <details>
+        <summary>E se o profissional tiver um imprevisto?</summary>
+        <p>Nosso suporte busca um substituto para o mesmo horário sempre que possível — ou reagenda/reembolsa, como você preferir.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="seja-profissional">
+  <div class="container">
+    <div class="pro-banner">
+      <div>
+        <h2>É marido de aluguel? Encha sua agenda com a MaridoJá.</h2>
+        <p>Cadastre-se, diga quais serviços você faz e em quais horários está disponível. A gente cuida do resto: clientes, agendamento e pagamento garantido.</p>
+        <a href="/pro.html" class="btn btn-cta">Quero ser profissional</a>
+      </div>
+      <ul>
+        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Você recebe notificação a cada novo pedido</li>
+        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Sabe exatamente quanto vai receber por serviço</li>
+        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Total liberdade para escolher dias e horários</li>
+        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Aceite ou recuse pedidos em um clique</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="cols">
+      <div>
+        <h4>MaridoJá</h4>
+        <p style="font-size:.92rem;max-width:26rem">A maneira mais fácil de contratar um marido de aluguel. Agendamento online, profissionais avaliados e preço transparente.</p>
+      </div>
+      <div>
+        <h4>Para clientes</h4>
+        <a href="/profissionais.html">Agendar serviço</a>
+        <a href="/minhas-reservas.html">Minhas reservas</a>
+        <a href="#precos">Tabela de preços</a>
+      </div>
+      <div>
+        <h4>Para profissionais</h4>
+        <a href="/pro.html">Painel do profissional</a>
+        <a href="#seja-profissional">Como funciona</a>
+      </div>
+    </div>
+    <div class="fine">© 2026 MaridoJá — MVP demonstrativo inspirado na estratégia DonaMaid. Todos os direitos reservados.</div>
+  </div>
+</footer>
+
+<script src="/js/app.js"></script>
+<script>
+(async function () {
+  const cfg = await API.get('/api/config');
+
+  const sel = document.getElementById('citySelect');
+  cfg.cities.forEach(c => sel.append(new Option(c, c)));
+  document.getElementById('citySearch').addEventListener('submit', e => {
+    e.preventDefault();
+    const city = sel.value;
+    location.href = '/profissionais.html' + (city ? '?city=' + encodeURIComponent(city) : '');
+  });
+
+  const tbody = document.querySelector('#priceTable tbody');
+  cfg.services.forEach(s => {
+    tbody.append(el(`<tr>
+      <td><strong>${esc(s.name)}</strong></td>
+      <td class="desc">${esc(s.desc)}</td>
+      <td class="price">${fmtBRL(s.hourlyRate)}/h</td>
+    </tr>`));
+  });
+})();
+</script>
+</body>
+</html>

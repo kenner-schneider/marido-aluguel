@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Profissionais — MaridoJá</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="logo" href="/">
+      <svg viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#1E40AF"/><path d="M22.8 9.5a4.6 4.6 0 0 0-5.9 5.6l-6.6 6.6a1.9 1.9 0 0 0 2.7 2.7l6.6-6.6a4.6 4.6 0 0 0 5.6-5.9l-2.6 2.6-2.4-.7-.7-2.4 2.6-2.6z" fill="#fff"/></svg>
+      <span>Marido<em>Já</em></span>
+    </a>
+    <nav class="nav-links">
+      <a href="/#como-funciona">Como funciona</a>
+      <a href="/#precos">Preços</a>
+      <a href="/minhas-reservas.html">Minhas reservas</a>
+      <a href="/pro.html">Sou profissional</a>
+      <a href="/profissionais.html" class="btn btn-cta btn-sm active">Agendar serviço</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container">
+  <div class="page-head">
+    <h1>Encontre o profissional ideal</h1>
+    <p>Filtre por cidade e tipo de serviço, compare as avaliações e agende direto na agenda do profissional.</p>
+  </div>
+
+  <div class="filters">
+    <select id="fCity" aria-label="Filtrar por cidade"><option value="">Todas as cidades</option></select>
+    <select id="fService" aria-label="Filtrar por serviço"><option value="">Todos os serviços</option></select>
+  </div>
+
+  <div class="cards-grid" id="grid"></div>
+  <div class="empty" id="empty" hidden>
+    <h3 style="margin-bottom:8px">Nenhum profissional encontrado</h3>
+    <p>Tente outra cidade ou outro tipo de serviço.</p>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <div class="fine">© 2026 MaridoJá — MVP demonstrativo. <a href="/">Voltar à página inicial</a></div>
+  </div>
+</footer>
+
+<script src="/js/app.js"></script>
+<script>
+(async function () {
+  const cfg = await API.get('/api/config');
+  const serviceById = Object.fromEntries(cfg.services.map(s => [s.id, s]));
+
+  const fCity = document.getElementById('fCity');
+  const fService = document.getElementById('fService');
+  cfg.cities.forEach(c => fCity.append(new Option(c, c)));
+  cfg.services.forEach(s => fService.append(new Option(s.name, s.id)));
+
+  const params = new URLSearchParams(location.search);
+  if (params.get('city')) fCity.value = params.get('city');
+  if (params.get('service')) fService.value = params.get('service');
+
+  const grid = document.getElementById('grid');
+  const empty = document.getElementById('empty');
+
+  async function load() {
+    const q = new URLSearchParams();
+    if (fCity.value) q.set('city', fCity.value);
+    if (fService.value) q.set('service', fService.value);
+    const pros = await API.get('/api/pros?' + q.toString());
+
+    grid.innerHTML = '';
+    empty.hidden = pros.length > 0;
+
+    pros.forEach(p => {
+      grid.append(el(`<article class="pro-card">
+        <div class="pro-card-head">
+          <div class="avatar">${esc(p.photo)}</div>
+          <div>
+            <h3>${esc(p.name)}</h3>
+            <span class="city">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+              ${esc(p.city)}
+            </span>
+          </div>
+        </div>
+        <div class="rating-line">
+          <span class="stars" aria-hidden="true">${starIcons(p.rating)}</span>
+          <strong>${p.rating.toFixed(1)}</strong>
+          <span>(${p.reviews} avaliações · ${p.jobs} serviços)</span>
+        </div>
+        <div class="tags">${p.services.map(id => `<span class="tag">${esc(serviceById[id]?.name || id)}</span>`).join('')}</div>
+        <p class="bio">${esc(p.bio)}</p>
+        <a class="btn btn-primary" href="/agendar.html?pro=${encodeURIComponent(p.id)}">Ver agenda e contratar</a>
+      </article>`));
+    });
+  }
+
+  fCity.addEventListener('change', load);
+  fService.addEventListener('change', load);
+  await load();
+})();
+</script>
+</body>
+</html>
