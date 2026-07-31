@@ -1,5 +1,5 @@
 {
-  "cities": ["São Paulo", "Curitiba", "Porto Alegre", "Florianópolis", "Belo Horizonte"],
+  "cities": ["Santa Maria"],
   "services": [
     { "id": "reparos", "name": "Reparos gerais", "hourlyRate": 90, "desc": "Portas, fechaduras, vazamentos simples, pequenos consertos do dia a dia." },
     { "id": "eletrica", "name": "Elétrica", "hourlyRate": 110, "desc": "Tomadas, interruptores, luminárias, chuveiros e ventiladores de teto." },
@@ -11,7 +11,7 @@
     {
       "id": "pro_carlos",
       "name": "Carlos Andrade",
-      "city": "São Paulo",
+      "city": "Santa Maria",
       "photo": "CA",
       "rating": 4.9,
       "reviews": 132,
@@ -23,7 +23,7 @@
     {
       "id": "pro_roberto",
       "name": "Roberto Lima",
-      "city": "São Paulo",
+      "city": "Santa Maria",
       "photo": "RL",
       "rating": 4.8,
       "reviews": 98,
@@ -35,7 +35,7 @@
     {
       "id": "pro_edson",
       "name": "Edson Ferreira",
-      "city": "Curitiba",
+      "city": "Santa Maria",
       "photo": "EF",
       "rating": 5.0,
       "reviews": 74,
@@ -47,7 +47,7 @@
     {
       "id": "pro_marcio",
       "name": "Márcio Souza",
-      "city": "Porto Alegre",
+      "city": "Santa Maria",
       "photo": "MS",
       "rating": 4.7,
       "reviews": 156,
@@ -59,7 +59,7 @@
     {
       "id": "pro_joao",
       "name": "João Batista",
-      "city": "Florianópolis",
+      "city": "Santa Maria",
       "photo": "JB",
       "rating": 4.9,
       "reviews": 61,
@@ -71,7 +71,7 @@
     {
       "id": "pro_antonio",
       "name": "Antônio Reis",
-      "city": "Belo Horizonte",
+      "city": "Santa Maria",
       "photo": "AR",
       "rating": 4.8,
       "reviews": 89,
