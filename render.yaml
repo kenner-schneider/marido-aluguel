@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: maridoja
+    name: seuquebragalho
     runtime: node
     plan: free
     buildCommand: npm install

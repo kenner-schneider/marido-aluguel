@@ -1,5 +1,5 @@
 {
-  "name": "maridoja-mvp",
+  "name": "seuquebragalho-mvp",
   "version": "0.1.0",
   "description": "MVP de marketplace de marido de aluguel (inspirado na estratégia DonaMaid)",
   "main": "server.js",

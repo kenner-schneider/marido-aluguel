@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Minhas reservas — MaridoJá</title>
+  <title>Minhas reservas — SeuQuebraGalho</title>
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -12,7 +12,7 @@
   <div class="container nav-inner">
     <a class="logo" href="/">
       <svg viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#1E40AF"/><path d="M22.8 9.5a4.6 4.6 0 0 0-5.9 5.6l-6.6 6.6a1.9 1.9 0 0 0 2.7 2.7l6.6-6.6a4.6 4.6 0 0 0 5.6-5.9l-2.6 2.6-2.4-.7-.7-2.4 2.6-2.6z" fill="#fff"/></svg>
-      <span>Marido<em>Já</em></span>
+      <span>SeuQuebra<em>Galho</em></span>
     </a>
     <nav class="nav-links">
       <a href="/profissionais.html">Profissionais</a>
@@ -62,7 +62,7 @@
   }
 
   const emailInput = document.getElementById('email');
-  const saved = localStorage.getItem('maridoja_email');
+  const saved = localStorage.getItem('seuquebragalho_email');
   if (saved) emailInput.value = saved;
 
   const listPanel = document.getElementById('listPanel');
@@ -72,7 +72,7 @@
   async function load() {
     const email = emailInput.value.trim();
     if (!email) return;
-    localStorage.setItem('maridoja_email', email);
+    localStorage.setItem('seuquebragalho_email', email);
     const bookings = await API.get('/api/bookings?email=' + encodeURIComponent(email));
     list.innerHTML = '';
     listPanel.hidden = bookings.length === 0;

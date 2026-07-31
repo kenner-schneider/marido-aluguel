@@ -1,4 +1,4 @@
-# Plano do MVP — "MaridoJá" (SaaS de Marido de Aluguel)
+# Plano do MVP — "SeuQuebraGalho" (SaaS de Marido de Aluguel)
 
 > Marketplace de agendamento de serviços de reparos residenciais, inspirado na estratégia da [DonaMaid](https://www.donamaid.com) (diaristas), adaptado para "marido de aluguel".
 
@@ -6,7 +6,7 @@
 
 O que a DonaMaid faz e que vamos replicar:
 
-| Elemento DonaMaid | Adaptação MaridoJá |
+| Elemento DonaMaid | Adaptação SeuQuebraGalho |
 |---|---|
 | Landing "A maneira mais fácil de contratar uma diarista" | Hero "A maneira mais fácil de contratar um marido de aluguel" |
 | Seletor de cidade na home | Seletor de cidade → lista de profissionais da região |

@@ -196,5 +196,5 @@ app.put('/api/pro/:id/availability', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`MaridoJá MVP rodando em http://localhost:${PORT}`);
+  console.log(`SeuQuebraGalho MVP rodando em http://localhost:${PORT}`);
 });
