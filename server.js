@@ -248,6 +248,32 @@ app.patch('/admin/api/chamados/:id', auth.exigirAdmin, async (req, res, next) =>
   } catch (err) { next(err); }
 });
 
+/**
+ * Exclui o chamado de vez, junto com as fotos no Storage.
+ * Para chamado real, o certo é "cancelado" — isso preserva o histórico.
+ * Esta rota existe para limpar teste e engano.
+ */
+app.delete('/admin/api/chamados/:id', auth.exigirAdmin, async (req, res, next) => {
+  try {
+    const chamado = await store.obterChamado(req.params.id);
+    if (!chamado) return res.status(404).json({ error: 'Chamado não encontrado' });
+
+    // apaga os arquivos primeiro: se sobrar registro sem foto tudo bem,
+    // mas foto sem registro vira lixo invisível no bucket
+    const fotos = await store.listarFotos(chamado.id);
+    for (const f of fotos) {
+      try {
+        await storage.apagar(f.storage_path);
+      } catch (err) {
+        console.error('[excluir] falha ao apagar imagem', f.storage_path, err.message);
+      }
+    }
+
+    await store.excluirChamado(chamado.id);
+    res.json({ ok: true, codigo: chamado.codigo, fotosApagadas: fotos.length });
+  } catch (err) { next(err); }
+});
+
 /** Serve a imagem local só para quem está logado. Nunca via arquivo estático. */
 app.get('/admin/api/imagem/:caminho(*)', auth.exigirAdmin, (req, res) => {
   try {

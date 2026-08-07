@@ -322,7 +322,40 @@
           <span>Repasse da taxa já recebido</span>
         </label>` : ''}
       </div>
+
+      <div class="detalhe-bloco">
+        <h4>Zona de risco</h4>
+        <p style="color:var(--text-muted);font-size:.9rem;margin-bottom:12px">
+          Para chamado real, prefira <strong>cancelar</strong> — assim o histórico fica. Excluir apaga o chamado e as fotos de vez, sem desfazer.
+        </p>
+        <button class="btn btn-sm" id="btnExcluir"
+          style="background:var(--danger-bg);color:var(--danger);border:1.5px solid var(--danger)">
+          Excluir chamado ${esc(c.codigo)}
+        </button>
+      </div>
     </div>`;
+
+    document.getElementById('btnExcluir').addEventListener('click', async ev => {
+      const qtd = c.fotos.length;
+      const aviso = `Excluir o chamado ${c.codigo} de ${c.cliente_nome}?`
+        + (qtd ? `\n\n${qtd} foto${qtd > 1 ? 's serão apagadas' : ' será apagada'} junto.` : '')
+        + '\n\nEsta ação não pode ser desfeita.';
+      if (!confirm(aviso)) return;
+
+      ev.currentTarget.disabled = true;
+      ev.currentTarget.textContent = 'Excluindo…';
+      try {
+        await API.send('/admin/api/chamados/' + encodeURIComponent(c.id), 'DELETE');
+        selecionadoId = null;
+        document.getElementById('detalhe').innerHTML =
+          '<div class="panel"><p class="notice success">Chamado excluído.</p></div>';
+        await carregar();
+      } catch (err) {
+        alert(err.message);
+        ev.currentTarget.disabled = false;
+        ev.currentTarget.textContent = `Excluir chamado ${c.codigo}`;
+      }
+    });
 
     // --- cálculo do repasse ao vivo ---
     const fValor = document.getElementById('fValor');
