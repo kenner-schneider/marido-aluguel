@@ -32,7 +32,9 @@ app.use((req, res, next) => {
   res.setHeader(
     'Content-Security-Policy',
     "default-src 'self'; " +
-    "img-src 'self' data: https://*.supabase.co; " +
+    // blob: é necessário para a prévia local das fotos antes do envio —
+    // são URLs criadas pela própria página, não vêm de fora.
+    "img-src 'self' data: blob: https://*.supabase.co; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src https://fonts.gstatic.com; " +
     "script-src 'self' 'unsafe-inline'; " +

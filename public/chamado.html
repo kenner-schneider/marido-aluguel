@@ -149,21 +149,42 @@
   const MAX = cfg.maxFotos;
   let arquivos = [];
 
+  let urlsAtivas = [];
+
   function renderPreviews() {
+    // libera as URLs da renderização anterior antes de criar novas
+    urlsAtivas.forEach(u => URL.revokeObjectURL(u));
+    urlsAtivas = [];
     previews.innerHTML = '';
+
     arquivos.forEach((f, i) => {
       const url = URL.createObjectURL(f);
+      urlsAtivas.push(url);
+
       const card = el(`<div class="preview">
         <img src="${url}" alt="Prévia da foto ${i + 1}">
         <button type="button" class="preview-remove" aria-label="Remover foto ${i + 1}">&times;</button>
       </div>`);
-      card.querySelector('img').addEventListener('load', () => URL.revokeObjectURL(url));
+
+      // Foto de iPhone costuma vir em HEIC, que o navegador não exibe.
+      // Nesse caso mostramos um cartão com o nome do arquivo — o envio
+      // funciona normalmente, quem converte é o servidor.
+      card.querySelector('img').addEventListener('error', () => {
+        card.classList.add('sem-previa');
+        card.querySelector('img').remove();
+        card.prepend(el(`<span class="previa-fallback">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.35-4.35a2 2 0 0 0-2.83 0L6 18"/></svg>
+          <em>${esc(f.name.length > 14 ? f.name.slice(0, 11) + '…' : f.name)}</em>
+        </span>`));
+      });
+
       card.querySelector('button').addEventListener('click', () => {
         arquivos.splice(i, 1);
         renderPreviews();
       });
       previews.append(card);
     });
+
     document.getElementById('dropzone').classList.toggle('has-files', arquivos.length > 0);
   }
 
