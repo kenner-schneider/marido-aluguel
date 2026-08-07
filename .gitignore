@@ -1,3 +1,7 @@
 node_modules/
-data/db.json
+.env
 .claude/
+
+# dados locais de desenvolvimento — nunca versionar (contêm dados de cliente)
+data/chamados.json
+data/uploads/

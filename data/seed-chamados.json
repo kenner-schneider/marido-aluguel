@@ -1,0 +1,17 @@
+{
+  "servicos": [
+    { "id": "chuveiro", "nome": "Chuveiro e elétrica", "descricao": "Troca de chuveiro e resistência, tomadas, interruptores, luminárias e ventilador de teto.", "preco_base": 90, "ordem": 1, "ativo": true },
+    { "id": "hidraulica", "nome": "Hidráulica", "descricao": "Torneiras, sifões, descargas, registros e vazamentos.", "preco_base": 110, "ordem": 2, "ativo": true },
+    { "id": "montagem", "nome": "Montagem de móveis", "descricao": "Montagem e desmontagem de móveis, ajustes e reforços.", "preco_base": 85, "ordem": 3, "ativo": true },
+    { "id": "instalacao", "nome": "Instalações", "descricao": "Suporte de TV, cortinas, persianas, prateleiras, quadros e espelhos.", "preco_base": 95, "ordem": 4, "ativo": true },
+    { "id": "reparos", "nome": "Reparos gerais", "descricao": "Portas, fechaduras, pequenos consertos do dia a dia.", "preco_base": 90, "ordem": 5, "ativo": true },
+    { "id": "outro", "nome": "Outro serviço", "descricao": "Descreva o que precisa e avaliamos sem compromisso.", "preco_base": null, "ordem": 6, "ativo": true }
+  ],
+  "profissionais": [
+    { "id": "prof_carlos", "nome": "Carlos Andrade", "telefone": "5555999990001", "especialidades": ["chuveiro", "instalacao", "reparos"], "ativo": true },
+    { "id": "prof_marcio", "nome": "Márcio Souza", "telefone": "5555999990002", "especialidades": ["chuveiro", "hidraulica", "reparos"], "ativo": true },
+    { "id": "prof_edson", "nome": "Edson Ferreira", "telefone": "5555999990003", "especialidades": ["montagem", "instalacao", "reparos"], "ativo": true }
+  ],
+  "chamados": [],
+  "chamado_fotos": []
+}

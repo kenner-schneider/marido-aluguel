@@ -18,20 +18,30 @@ const API = {
   }
 };
 
-const fmtBRL = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const fmtBRL = v => Number(v || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
 const fmtDate = iso => {
-  const [y, m, d] = iso.split('-');
+  if (!iso) return '—';
+  const [y, m, d] = iso.slice(0, 10).split('-');
   return `${d}/${m}/${y}`;
 };
 
-const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'];
+const fmtDataHora = iso => {
+  if (!iso) return '—';
+  const dt = new Date(iso);
+  if (isNaN(dt)) return fmtDate(iso);
+  return dt.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+};
+
+const TURNOS = { manha: 'manhã', tarde: 'tarde' };
 
 const STATUS_LABEL = {
-  pendente: 'Aguardando confirmação',
-  confirmado: 'Confirmado',
+  novo: 'Novo',
+  em_analise: 'Em análise',
+  orcado: 'Orçado',
+  agendado: 'Agendado',
   concluido: 'Concluído',
-  recusado: 'Recusado'
+  cancelado: 'Cancelado'
 };
 
 function el(html) {

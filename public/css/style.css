@@ -251,6 +251,96 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary-light); 
 .switch input:checked + .track { background: var(--success); }
 .switch input:checked + .track::after { transform: translateX(18px); }
 
+/* ---------- upload de fotos ---------- */
+.dropzone {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: 28px 20px; border: 2px dashed var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text-muted); cursor: pointer; text-align: center;
+  transition: border-color .2s, background-color .2s;
+}
+.dropzone:hover { border-color: var(--primary-light); background: var(--bg-tint); }
+.dropzone strong { color: var(--text); font-size: .98rem; }
+.dropzone span { font-size: .85rem; }
+.dropzone.has-files { padding: 16px; }
+.dropzone:focus-within { outline: 3px solid rgba(59, 130, 246, .5); outline-offset: 2px; }
+
+.previews { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.preview { position: relative; width: 92px; height: 92px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+.preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.preview-remove {
+  position: absolute; top: 4px; right: 4px; width: 26px; height: 26px; min-height: 26px;
+  border: none; border-radius: 50%; background: rgba(15, 23, 42, .78); color: #fff;
+  font-size: 1.05rem; line-height: 1; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background-color .2s;
+}
+.preview-remove:hover { background: var(--danger); }
+
+/* ---------- linha do tempo do chamado ---------- */
+.linha-tempo { list-style: none; padding: 0; margin: 0; }
+.passo { display: flex; gap: 14px; padding-bottom: 22px; position: relative; }
+.passo:last-child { padding-bottom: 0; }
+.passo::before {
+  content: ''; position: absolute; left: 10px; top: 24px; bottom: 0; width: 2px; background: var(--border);
+}
+.passo:last-child::before { display: none; }
+.passo .marca {
+  width: 22px; height: 22px; border-radius: 50%; flex-shrink: 0; z-index: 1;
+  background: var(--surface); border: 2px solid var(--border);
+}
+.passo.feito .marca { background: var(--success); border-color: var(--success); }
+.passo.feito::before { background: var(--success); }
+.passo.atual .marca { background: var(--primary); border-color: var(--primary); box-shadow: 0 0 0 4px rgba(59, 130, 246, .18); }
+.passo strong { display: block; font-size: .98rem; color: var(--text-muted); line-height: 1.3; }
+.passo.feito strong, .passo.atual strong { color: var(--text); }
+.passo.atual strong { font-weight: 700; }
+.passo p { color: var(--text-muted); font-size: .9rem; margin-top: 4px; }
+
+/* ---------- status dos chamados ---------- */
+.badge.novo { background: var(--warning-bg); color: var(--warning); }
+.badge.em_analise { background: #F5F3FF; color: #6D28D9; }
+.badge.orcado { background: var(--bg-tint); color: var(--primary); }
+.badge.agendado { background: #ECFEFF; color: #0E7490; }
+.badge.cancelado { background: var(--danger-bg); color: var(--danger); }
+
+/* ---------- painel interno ---------- */
+.admin-layout { display: grid; grid-template-columns: 380px 1fr; gap: 24px; align-items: start; }
+.filtros-status { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.filtro-chip {
+  padding: 7px 14px; border: 1.5px solid var(--border); border-radius: 999px; background: var(--surface);
+  font-size: .87rem; font-weight: 600; color: var(--text-muted); cursor: pointer; min-height: 38px;
+  transition: border-color .15s, background-color .15s, color .15s;
+}
+.filtro-chip:hover { border-color: var(--primary-light); }
+.filtro-chip.ativo { background: var(--primary); border-color: var(--primary); color: #fff; }
+
+.lista-chamados { display: grid; gap: 10px; max-height: 72vh; overflow-y: auto; padding-right: 4px; }
+.item-chamado {
+  text-align: left; width: 100%; background: var(--surface); border: 1.5px solid var(--border);
+  border-radius: 10px; padding: 14px 16px; cursor: pointer; display: grid; gap: 6px;
+  transition: border-color .15s, box-shadow .15s;
+}
+.item-chamado:hover { border-color: var(--primary-light); box-shadow: var(--shadow-sm); }
+.item-chamado.ativo { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(59, 130, 246, .15); }
+.item-chamado .topo { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.item-chamado .codigo { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 700; font-size: .92rem; }
+.item-chamado .resumo { font-size: .9rem; color: var(--text); }
+.item-chamado .meta { font-size: .82rem; color: var(--text-muted); }
+.item-chamado .urgente { color: var(--danger); font-weight: 700; font-size: .78rem; }
+
+.detalhe-bloco { padding: 18px 0; border-bottom: 1px solid var(--border); }
+.detalhe-bloco:last-child { border-bottom: none; }
+.detalhe-bloco h4 { font-size: .82rem; text-transform: uppercase; letter-spacing: .05em; color: var(--text-muted); margin-bottom: 10px; }
+.campo-linha { display: flex; justify-content: space-between; gap: 16px; padding: 5px 0; font-size: .93rem; }
+.campo-linha span { color: var(--text-muted); }
+.campo-linha strong { text-align: right; }
+
+.galeria { display: flex; flex-wrap: wrap; gap: 10px; }
+.galeria a { display: block; width: 110px; height: 110px; border-radius: 10px; overflow: hidden; border: 1px solid var(--border); }
+.galeria img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform .2s; }
+.galeria a:hover img { transform: scale(1.05); }
+
+.acoes-linha { display: flex; gap: 10px; flex-wrap: wrap; }
+
 /* ---------- footer ---------- */
 .footer { background: var(--primary-dark); color: #BFDBFE; padding: 48px 0 32px; margin-top: 72px; }
 .footer .cols { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 32px; margin-bottom: 32px; }
@@ -268,6 +358,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary-light); 
 
 /* ---------- responsivo ---------- */
 @media (max-width: 900px) {
+  .admin-layout { grid-template-columns: 1fr; }
+  .lista-chamados { max-height: none; }
   .hero-grid, .pro-banner { grid-template-columns: 1fr; }
   .hero-art { order: -1; }
   .hero-art svg { max-width: 300px; }

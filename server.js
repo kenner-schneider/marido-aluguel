@@ -1,200 +1,279 @@
 const express = require('express');
-const fs = require('fs');
 const path = require('path');
+const multer = require('multer');
+const rateLimit = require('express-rate-limit');
+const cookieParser = require('cookie-parser');
+
+const store = require('./lib/store');
+const storage = require('./lib/storage');
+const { processarImagens, MAX_ARQUIVOS, MAX_BYTES } = require('./lib/uploads');
+const { notificarNovoChamado } = require('./lib/notify');
+const auth = require('./lib/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DB_PATH = path.join(__dirname, 'data', 'db.json');
-const SEED_PATH = path.join(__dirname, 'data', 'seed.json');
+const TAXA_PADRAO = Number(process.env.TAXA_PERCENTUAL || 20);
 
+app.set('trust proxy', 1); // Render/Cloudflare: IP real para o rate limit
 app.use(express.json());
+app.use(cookieParser());
+
+// Cabeçalhos de segurança. O CSP é restritivo: nada de script externo, e
+// as imagens (conteúdo enviado por terceiros) só podem vir de origem própria
+// ou do Supabase Storage.
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; " +
+    "img-src 'self' data: https://*.supabase.co; " +
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+    "font-src https://fonts.gstatic.com; " +
+    "script-src 'self' 'unsafe-inline'; " +
+    "form-action 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
+  );
+  next();
+});
+
+// IMPORTANTE: data/uploads NÃO fica dentro de public — imagem enviada por
+// usuário nunca é servida como arquivo estático.
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ---------- armazenamento em JSON (MVP; trocar por Postgres na v2) ----------
-function loadDb() {
-  if (!fs.existsSync(DB_PATH)) {
-    fs.copyFileSync(SEED_PATH, DB_PATH);
-  }
-  return JSON.parse(fs.readFileSync(DB_PATH, 'utf8'));
-}
-function saveDb(db) {
-  fs.writeFileSync(DB_PATH, JSON.stringify(db, null, 2), 'utf8');
-}
+// ---------------------------------------------------------------- limites
 
-const PLATFORM_FEE = 0.2; // plataforma fica com 20%, profissional recebe 80%
-
-// ---------- helpers ----------
-function proPublic(pro) {
-  const { accessCode, ...rest } = pro;
-  return rest;
-}
-
-// horários livres = grade de disponibilidade do dia − reservas ativas na data
-function freeSlots(db, pro, dateStr) {
-  const date = new Date(dateStr + 'T12:00:00');
-  if (isNaN(date)) return [];
-  const weekday = date.getDay(); // 0=domingo
-  const av = pro.availability[String(weekday)];
-  if (!av) return [];
-  const taken = db.bookings
-    .filter(b => b.proId === pro.id && b.date === dateStr && b.status !== 'recusado' && b.status !== 'cancelado')
-    .flatMap(b => {
-      const start = parseInt(b.time.split(':')[0], 10);
-      return Array.from({ length: b.hours }, (_, i) => start + i);
-    });
-  const slots = [];
-  for (let h = av.start; h < av.end; h++) {
-    if (!taken.includes(h)) slots.push(`${String(h).padStart(2, '0')}:00`);
-  }
-  return slots;
-}
-
-// ---------- API ----------
-app.get('/api/config', (req, res) => {
-  const db = loadDb();
-  res.json({ cities: db.cities, services: db.services, platformFee: PLATFORM_FEE });
+const limiteChamado = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: 5,                                   // 5 chamados por hora por IP
+  message: { error: 'Muitos chamados enviados. Tente novamente mais tarde.' },
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
-app.get('/api/pros', (req, res) => {
-  const db = loadDb();
-  const { city, service } = req.query;
-  let pros = db.pros;
-  if (city) pros = pros.filter(p => p.city === city);
-  if (service) pros = pros.filter(p => p.services.includes(service));
-  res.json(pros.map(proPublic));
+const limiteLogin = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,                                  // trava força bruta na senha do painel
+  message: { error: 'Muitas tentativas. Aguarde 15 minutos.' },
+  standardHeaders: true,
+  legacyHeaders: false
 });
 
-app.get('/api/pros/:id', (req, res) => {
-  const db = loadDb();
-  const pro = db.pros.find(p => p.id === req.params.id);
-  if (!pro) return res.status(404).json({ error: 'Profissional não encontrado' });
-  res.json(proPublic(pro));
+const limiteConsulta = rateLimit({ windowMs: 60 * 1000, max: 30 });
+
+// Arquivos ficam em memória: nada é gravado em disco antes de ser validado
+// e re-encodado. O limite aqui é a primeira barreira; a segunda está no
+// pipeline (lib/uploads.js).
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: MAX_BYTES, files: MAX_ARQUIVOS, fields: 20, parts: 30 }
 });
 
-app.get('/api/pros/:id/slots', (req, res) => {
-  const db = loadDb();
-  const pro = db.pros.find(p => p.id === req.params.id);
-  if (!pro) return res.status(404).json({ error: 'Profissional não encontrado' });
-  const { date } = req.query;
-  if (!date) return res.status(400).json({ error: 'Informe a data (?date=AAAA-MM-DD)' });
-  res.json({ date, slots: freeSlots(db, pro, date) });
+function baseUrl(req) {
+  return `${req.protocol}://${req.get('host')}`;
+}
+
+// =====================================================================
+// API pública (cliente)
+// =====================================================================
+
+app.get('/api/config', limiteConsulta, async (req, res, next) => {
+  try {
+    const servicos = await store.listarServicos();
+    res.json({ servicos, cidade: 'Santa Maria', maxFotos: MAX_ARQUIVOS });
+  } catch (err) { next(err); }
 });
 
-app.post('/api/bookings', (req, res) => {
-  const db = loadDb();
-  const { proId, serviceId, date, time, hours, clientName, clientEmail, clientPhone, address, notes } = req.body || {};
+/** Vitrine da equipe: só nome e especialidades, nunca o telefone. */
+app.get('/api/equipe', limiteConsulta, async (req, res, next) => {
+  try {
+    const pros = await store.listarProfissionais();
+    res.json(pros.map(p => ({ id: p.id, nome: p.nome, especialidades: p.especialidades })));
+  } catch (err) { next(err); }
+});
 
-  const pro = db.pros.find(p => p.id === proId);
-  const service = db.services.find(s => s.id === serviceId);
-  const nHours = parseInt(hours, 10);
+app.post('/api/chamados', limiteChamado, upload.array('fotos', MAX_ARQUIVOS), async (req, res, next) => {
+  try {
+    const b = req.body || {};
+    const servicos = await store.listarServicos();
+    const servico = servicos.find(s => s.id === b.servico_id);
 
-  if (!pro) return res.status(400).json({ error: 'Profissional inválido' });
-  if (!service) return res.status(400).json({ error: 'Serviço inválido' });
-  if (!pro.services.includes(serviceId)) return res.status(400).json({ error: 'Este profissional não atende esse serviço' });
-  if (!date || !time) return res.status(400).json({ error: 'Informe data e horário' });
-  if (!nHours || nHours < 1 || nHours > 8) return res.status(400).json({ error: 'Duração deve ser entre 1 e 8 horas' });
-  if (!clientName || !clientEmail || !clientPhone || !address) {
-    return res.status(400).json({ error: 'Preencha nome, e-mail, telefone e endereço' });
-  }
-
-  // todos os horários do intervalo precisam estar livres
-  const slots = freeSlots(db, pro, date);
-  const startH = parseInt(time.split(':')[0], 10);
-  for (let h = startH; h < startH + nHours; h++) {
-    if (!slots.includes(`${String(h).padStart(2, '0')}:00`)) {
-      return res.status(409).json({ error: 'Horário indisponível para essa duração. Escolha outro horário.' });
+    // ---- validação (o servidor nunca confia no que veio do formulário) ----
+    if (!servico) return res.status(400).json({ error: 'Escolha um serviço.' });
+    if (!b.descricao || b.descricao.trim().length < 10) {
+      return res.status(400).json({ error: 'Descreva o que precisa ser feito (mínimo 10 caracteres).' });
     }
+    if (!b.cliente_nome?.trim() || !b.cliente_telefone?.trim()) {
+      return res.status(400).json({ error: 'Informe seu nome e telefone.' });
+    }
+    if (!b.endereco?.trim() || !b.bairro?.trim()) {
+      return res.status(400).json({ error: 'Informe o endereço e o bairro.' });
+    }
+    const turnos = ['manha', 'tarde'];
+    if (b.turno_preferido && !turnos.includes(b.turno_preferido)) {
+      return res.status(400).json({ error: 'Turno inválido.' });
+    }
+
+    const dados = {
+      servico_id: servico.id,
+      descricao: b.descricao.trim().slice(0, 2000),
+      urgente: b.urgente === 'true' || b.urgente === 'on',
+      data_preferida: b.data_preferida || null,
+      turno_preferido: turnos.includes(b.turno_preferido) ? b.turno_preferido : null,
+      data_alternativa: b.data_alternativa || null,
+      turno_alternativo: turnos.includes(b.turno_alternativo) ? b.turno_alternativo : null,
+      cliente_nome: b.cliente_nome.trim().slice(0, 120),
+      cliente_telefone: b.cliente_telefone.trim().slice(0, 30),
+      cliente_email: b.cliente_email?.trim().toLowerCase().slice(0, 160) || null,
+      endereco: b.endereco.trim().slice(0, 240),
+      bairro: b.bairro.trim().slice(0, 80),
+      taxa_percentual: TAXA_PADRAO
+    };
+
+    // ---- imagens: valida, re-encoda e só então guarda ----
+    let fotos = [];
+    try {
+      fotos = await processarImagens(req.files, 'tmp');
+    } catch (err) {
+      return res.status(400).json({ error: err.message });
+    }
+
+    const chamado = await store.criarChamado(dados, []);
+
+    // agora que existe código, grava os arquivos sob a pasta dele
+    const metadados = [];
+    for (const foto of fotos) {
+      const caminho = `${chamado.codigo}/${foto.storage_path.split('/').pop()}`;
+      await storage.salvar(caminho, foto.buffer, foto.contentType);
+      metadados.push({
+        storage_path: caminho,
+        largura: foto.largura,
+        altura: foto.altura,
+        bytes: foto.bytes
+      });
+    }
+    await store.registrarFotos(chamado.id, metadados);
+
+    // notificação nunca derruba a abertura do chamado
+    notificarNovoChamado(chamado, servico, metadados.length, baseUrl(req))
+      .catch(err => console.error('[notify]', err.message));
+
+    res.status(201).json({ codigo: chamado.codigo });
+  } catch (err) { next(err); }
+});
+
+/** Acompanhamento pelo código — devolve só o status, nunca o dado pessoal. */
+app.get('/api/chamados/:codigo', limiteConsulta, async (req, res, next) => {
+  try {
+    const c = await store.obterChamadoPorCodigo(req.params.codigo);
+    if (!c) return res.status(404).json({ error: 'Chamado não encontrado. Confira o código.' });
+    const servicos = await store.listarServicos();
+    res.json({
+      codigo: c.codigo,
+      status: c.status,
+      servico: servicos.find(s => s.id === c.servico_id)?.nome || 'Serviço',
+      criado_em: c.criado_em,
+      agendado_para: c.agendado_para,
+      valor_cobrado: c.valor_cobrado
+    });
+  } catch (err) { next(err); }
+});
+
+// =====================================================================
+// Painel interno
+// =====================================================================
+
+app.post('/admin/api/login', limiteLogin, (req, res) => {
+  if (!auth.senhaConfere(req.body?.senha)) {
+    return res.status(401).json({ error: 'Senha incorreta.' });
   }
-
-  // preço calculado no servidor — nunca confiar no valor vindo do cliente
-  const price = service.hourlyRate * nHours;
-  const payout = Math.round(price * (1 - PLATFORM_FEE) * 100) / 100;
-
-  const booking = {
-    id: 'bk_' + Date.now().toString(36) + Math.floor(Math.random() * 1e4).toString(36),
-    proId,
-    serviceId,
-    date,
-    time,
-    hours: nHours,
-    price,
-    payout,
-    clientName,
-    clientEmail: clientEmail.toLowerCase().trim(),
-    clientPhone,
-    address,
-    notes: notes || '',
-    status: 'pendente',
-    createdAt: new Date().toISOString()
-  };
-  db.bookings.push(booking);
-  saveDb(db);
-  res.status(201).json(booking);
+  auth.definirCookie(res);
+  res.json({ ok: true });
 });
 
-app.get('/api/bookings', (req, res) => {
-  const db = loadDb();
-  const email = (req.query.email || '').toLowerCase().trim();
-  if (!email) return res.status(400).json({ error: 'Informe o e-mail (?email=)' });
-  const list = db.bookings
-    .filter(b => b.clientEmail === email)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  res.json(list);
+app.post('/admin/api/logout', (req, res) => {
+  auth.limparCookie(res);
+  res.json({ ok: true });
 });
 
-// ---------- lado do profissional ----------
-app.get('/api/pro/:id/bookings', (req, res) => {
-  const db = loadDb();
-  const list = db.bookings
-    .filter(b => b.proId === req.params.id)
-    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  res.json(list);
+app.get('/admin/api/sessao', (req, res) => {
+  res.json({ logado: auth.estaLogado(req), usandoSupabase: store.usandoSupabase });
 });
 
-function setStatus(req, res, from, to) {
-  const db = loadDb();
-  const booking = db.bookings.find(b => b.id === req.params.id);
-  if (!booking) return res.status(404).json({ error: 'Reserva não encontrada' });
-  if (booking.status !== from) return res.status(409).json({ error: `Só é possível a partir do status "${from}"` });
-  booking.status = to;
-  saveDb(db);
-  res.json(booking);
-}
-app.post('/api/bookings/:id/accept', (req, res) => setStatus(req, res, 'pendente', 'confirmado'));
-app.post('/api/bookings/:id/decline', (req, res) => setStatus(req, res, 'pendente', 'recusado'));
-app.post('/api/bookings/:id/complete', (req, res) => setStatus(req, res, 'confirmado', 'concluido'));
-
-app.get('/api/pro/:id/earnings', (req, res) => {
-  const db = loadDb();
-  const mine = db.bookings.filter(b => b.proId === req.params.id);
-  const sum = states => mine.filter(b => states.includes(b.status)).reduce((acc, b) => acc + b.payout, 0);
-  res.json({
-    pending: sum(['pendente']),
-    confirmed: sum(['confirmado']),
-    completed: sum(['concluido']),
-    jobsCompleted: mine.filter(b => b.status === 'concluido').length
-  });
+app.get('/admin/api/chamados', auth.exigirAdmin, async (req, res, next) => {
+  try {
+    const [chamados, servicos, profissionais] = await Promise.all([
+      store.listarChamados({ status: req.query.status || undefined }),
+      store.listarServicos(),
+      store.listarProfissionais({ apenasAtivos: false })
+    ]);
+    res.json({ chamados, servicos, profissionais });
+  } catch (err) { next(err); }
 });
 
-app.put('/api/pro/:id/availability', (req, res) => {
-  const db = loadDb();
-  const pro = db.pros.find(p => p.id === req.params.id);
-  if (!pro) return res.status(404).json({ error: 'Profissional não encontrado' });
-  const av = req.body || {};
-  const clean = {};
-  for (const [day, range] of Object.entries(av)) {
-    const d = parseInt(day, 10);
-    if (isNaN(d) || d < 0 || d > 6 || !range) continue;
-    const start = parseInt(range.start, 10);
-    const end = parseInt(range.end, 10);
-    if (isNaN(start) || isNaN(end) || start < 6 || end > 22 || start >= end) continue;
-    clean[String(d)] = { start, end };
+app.get('/admin/api/chamados/:id', auth.exigirAdmin, async (req, res, next) => {
+  try {
+    const chamado = await store.obterChamado(req.params.id);
+    if (!chamado) return res.status(404).json({ error: 'Chamado não encontrado' });
+    const fotos = await store.listarFotos(chamado.id);
+    const comUrl = await Promise.all(
+      fotos.map(async f => ({ ...f, url: await storage.urlDeExibicao(f.storage_path) }))
+    );
+    res.json({ ...chamado, fotos: comUrl });
+  } catch (err) { next(err); }
+});
+
+app.patch('/admin/api/chamados/:id', auth.exigirAdmin, async (req, res, next) => {
+  try {
+    const atual = await store.obterChamado(req.params.id);
+    if (!atual) return res.status(404).json({ error: 'Chamado não encontrado' });
+
+    const permitidos = ['novo', 'em_analise', 'orcado', 'agendado', 'concluido', 'cancelado'];
+    if (req.body.status && !permitidos.includes(req.body.status)) {
+      return res.status(400).json({ error: 'Status inválido' });
+    }
+    const valor = req.body.valor_cobrado;
+    if (valor !== undefined && valor !== null && (isNaN(Number(valor)) || Number(valor) < 0)) {
+      return res.status(400).json({ error: 'Valor inválido' });
+    }
+
+    const atualizado = await store.atualizarChamado(req.params.id, req.body);
+    res.json(atualizado);
+  } catch (err) { next(err); }
+});
+
+/** Serve a imagem local só para quem está logado. Nunca via arquivo estático. */
+app.get('/admin/api/imagem/:caminho(*)', auth.exigirAdmin, (req, res) => {
+  try {
+    const buffer = storage.lerLocal(req.params.caminho);
+    res.setHeader('Content-Type', 'image/jpeg');
+    res.setHeader('Cache-Control', 'private, max-age=300');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.send(buffer);
+  } catch {
+    res.status(404).end();
   }
-  pro.availability = clean;
-  saveDb(db);
-  res.json({ availability: pro.availability });
+});
+
+// =====================================================================
+
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError) {
+    const msg = err.code === 'LIMIT_FILE_SIZE'
+      ? 'Cada imagem deve ter no máximo 8 MB.'
+      : err.code === 'LIMIT_FILE_COUNT'
+        ? `Envie no máximo ${MAX_ARQUIVOS} fotos.`
+        : 'Falha no envio dos arquivos.';
+    return res.status(400).json({ error: msg });
+  }
+  console.error('[erro]', err);
+  res.status(500).json({ error: 'Erro interno. Tente novamente.' });
 });
 
 app.listen(PORT, () => {
-  console.log(`SeuQuebraGalho MVP rodando em http://localhost:${PORT}`);
+  console.log(`\nSeuQuebraGalho rodando em http://localhost:${PORT}`);
+  console.log(`  Banco:        ${store.usandoSupabase ? 'Supabase' : 'JSON local (data/chamados.json)'}`);
+  console.log(`  Imagens:      ${storage.usandoSupabase ? 'Supabase Storage' : 'data/uploads (fora do público)'}`);
+  console.log(`  Notificação:  ${process.env.DISCORD_WEBHOOK_URL ? 'Discord' : 'console (webhook não configurado)'}`);
+  if (auth.SENHA_PADRAO) console.log('  ⚠ ADMIN_PASSWORD não definida — usando senha padrão de desenvolvimento\n');
 });

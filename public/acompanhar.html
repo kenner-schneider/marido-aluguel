@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Acompanhar chamado — SeuQuebraGalho</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="logo" href="/">
+      <svg viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#1E40AF"/><path d="M22.8 9.5a4.6 4.6 0 0 0-5.9 5.6l-6.6 6.6a1.9 1.9 0 0 0 2.7 2.7l6.6-6.6a4.6 4.6 0 0 0 5.6-5.9l-2.6 2.6-2.4-.7-.7-2.4 2.6-2.6z" fill="#fff"/></svg>
+      <span>SeuQuebra<em>Galho</em></span>
+    </a>
+    <nav class="nav-links">
+      <a href="/#como-funciona">Como funciona</a>
+      <a href="/chamado.html" class="btn btn-cta btn-sm">Pedir orçamento</a>
+    </nav>
+  </div>
+</header>
+
+<div class="container" style="max-width:680px">
+  <div class="page-head">
+    <h1>Acompanhar chamado</h1>
+    <p>Informe o código que você recebeu ao abrir o pedido.</p>
+  </div>
+
+  <div id="banner"></div>
+
+  <form id="form" class="panel" style="display:flex;gap:12px;flex-wrap:wrap;align-items:flex-end;margin-bottom:24px">
+    <label class="field" style="flex:1;min-width:200px">Código do chamado
+      <input type="text" id="codigo" required placeholder="SQG-0000" autocomplete="off">
+    </label>
+    <button type="submit" class="btn btn-primary">Consultar</button>
+  </form>
+
+  <div id="resultado"></div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+(function () {
+  const params = new URLSearchParams(location.search);
+  const input = document.getElementById('codigo');
+  const resultado = document.getElementById('resultado');
+
+  const PASSOS = [
+    { id: 'novo',       titulo: 'Pedido recebido',   texto: 'Recebemos seu pedido e já fomos notificados.' },
+    { id: 'em_analise', titulo: 'Em análise',        texto: 'Estamos avaliando o que você descreveu para montar o orçamento.' },
+    { id: 'orcado',     titulo: 'Orçamento enviado', texto: 'Mandamos o valor no seu WhatsApp. É só confirmar.' },
+    { id: 'agendado',   titulo: 'Agendado',          texto: 'Profissional e horário confirmados.' },
+    { id: 'concluido',  titulo: 'Concluído',         texto: 'Serviço finalizado. Obrigado pela confiança!' }
+  ];
+
+  if (params.get('novo')) {
+    document.getElementById('banner').innerHTML =
+      '<p class="notice success">Pedido enviado! Nossa equipe já foi avisada e responde no seu WhatsApp em breve. Guarde o código abaixo.</p>';
+  }
+
+  const salvo = params.get('codigo') || localStorage.getItem('sqg_codigo');
+  if (salvo) input.value = salvo;
+
+  async function consultar() {
+    const codigo = input.value.trim().toUpperCase();
+    if (!codigo) return;
+    resultado.innerHTML = '<div class="empty">Consultando…</div>';
+    try {
+      const c = await API.get('/api/chamados/' + encodeURIComponent(codigo));
+      localStorage.setItem('sqg_codigo', c.codigo);
+
+      if (c.status === 'cancelado') {
+        resultado.innerHTML = `<div class="panel">
+          <h2 style="font-size:1.15rem">Chamado ${esc(c.codigo)}</h2>
+          <p class="notice error" style="margin-top:12px">Este chamado foi cancelado. Se foi engano, é só abrir um novo pedido.</p>
+        </div>`;
+        return;
+      }
+
+      const atual = PASSOS.findIndex(p => p.id === c.status);
+      const linha = PASSOS.map((p, i) => `
+        <li class="passo ${i < atual ? 'feito' : i === atual ? 'atual' : ''}">
+          <span class="marca" aria-hidden="true"></span>
+          <div>
+            <strong>${esc(p.titulo)}</strong>
+            ${i === atual ? `<p>${esc(p.texto)}</p>` : ''}
+          </div>
+        </li>`).join('');
+
+      resultado.innerHTML = `<div class="panel">
+        <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px">
+          <h2 style="font-size:1.15rem;margin:0">Chamado ${esc(c.codigo)}</h2>
+          <span class="badge ${esc(c.status)}">${esc(PASSOS[atual]?.titulo || c.status)}</span>
+        </div>
+        <p style="color:var(--text-muted);font-size:.93rem;margin-bottom:20px">
+          ${esc(c.servico)} · aberto em ${fmtDataHora(c.criado_em)}
+          ${c.agendado_para ? ` · agendado para ${fmtDataHora(c.agendado_para)}` : ''}
+          ${c.valor_cobrado ? ` · orçado em <strong>${fmtBRL(Number(c.valor_cobrado))}</strong>` : ''}
+        </p>
+        <ol class="linha-tempo">${linha}</ol>
+      </div>`;
+    } catch (err) {
+      resultado.innerHTML = `<p class="notice error">${esc(err.message)}</p>`;
+    }
+  }
+
+  document.getElementById('form').addEventListener('submit', e => { e.preventDefault(); consultar(); });
+  if (input.value) consultar();
+})();
+</script>
+</body>
+</html>

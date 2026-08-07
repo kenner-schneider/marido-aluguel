@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Painel interno — SeuQuebraGalho</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="container nav-inner">
+    <a class="logo" href="/">
+      <svg viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#1E40AF"/><path d="M22.8 9.5a4.6 4.6 0 0 0-5.9 5.6l-6.6 6.6a1.9 1.9 0 0 0 2.7 2.7l6.6-6.6a4.6 4.6 0 0 0 5.6-5.9l-2.6 2.6-2.4-.7-.7-2.4 2.6-2.6z" fill="#fff"/></svg>
+      <span>SeuQuebra<em>Galho</em></span>
+    </a>
+    <nav class="nav-links">
+      <span id="infoBackend" style="font-size:.82rem;color:var(--text-muted)"></span>
+      <button class="btn btn-outline btn-sm" id="btnSair" hidden>Sair</button>
+    </nav>
+  </div>
+</header>
+
+<!-- ------------------------------ login ------------------------------ -->
+<div class="container" style="max-width:420px" id="telaLogin" hidden>
+  <div class="page-head"><h1>Painel interno</h1><p>Acesso restrito à equipe.</p></div>
+  <form class="panel form-grid" id="formLogin">
+    <label class="field">Senha
+      <input type="password" id="senha" required autocomplete="current-password">
+    </label>
+    <div id="msgLogin"></div>
+    <button type="submit" class="btn btn-primary">Entrar</button>
+  </form>
+</div>
+
+<!-- ----------------------------- painel ------------------------------ -->
+<div class="container" id="telaPainel" hidden>
+  <div class="page-head">
+    <h1>Chamados</h1>
+    <p>Triagem, orçamento e atribuição. O cliente acompanha pelo código.</p>
+  </div>
+
+  <div class="stat-cards" style="margin-bottom:24px">
+    <div class="stat-card"><span>Novos</span><strong id="statNovos">0</strong></div>
+    <div class="stat-card"><span>Em aberto</span><strong id="statAbertos">0</strong></div>
+    <div class="stat-card"><span>A receber de repasse</span><strong id="statRepasse">R$ 0,00</strong></div>
+    <div class="stat-card"><span>Concluídos no total</span><strong id="statConcluidos">0</strong></div>
+  </div>
+
+  <div class="admin-layout">
+    <div>
+      <div class="filtros-status" id="filtros"></div>
+      <div class="lista-chamados" id="lista"></div>
+      <p class="empty" id="listaVazia" hidden>Nenhum chamado neste filtro.</p>
+    </div>
+    <div id="detalhe">
+      <div class="panel"><p class="empty">Selecione um chamado à esquerda para ver os detalhes.</p></div>
+    </div>
+  </div>
+  <div style="height:48px"></div>
+</div>
+
+<script src="/js/app.js"></script>
+<script>
+(async function () {
+  const telaLogin = document.getElementById('telaLogin');
+  const telaPainel = document.getElementById('telaPainel');
+  const btnSair = document.getElementById('btnSair');
+
+  let dados = { chamados: [], servicos: [], profissionais: [] };
+  let filtro = '';
+  let selecionadoId = null;
+
+  const FILTROS = [
+    { id: '', nome: 'Todos' },
+    { id: 'novo', nome: 'Novos' },
+    { id: 'em_analise', nome: 'Em análise' },
+    { id: 'orcado', nome: 'Orçados' },
+    { id: 'agendado', nome: 'Agendados' },
+    { id: 'concluido', nome: 'Concluídos' },
+    { id: 'cancelado', nome: 'Cancelados' }
+  ];
+
+  // ------------------------------------------------------------- sessão
+  const sessao = await API.get('/admin/api/sessao');
+  document.getElementById('infoBackend').textContent =
+    sessao.usandoSupabase ? 'Supabase' : 'dados locais';
+
+  function mostrarPainel(logado) {
+    telaLogin.hidden = logado;
+    telaPainel.hidden = !logado;
+    btnSair.hidden = !logado;
+  }
+  mostrarPainel(sessao.logado);
+  if (sessao.logado) carregar();
+
+  document.getElementById('formLogin').addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = document.getElementById('msgLogin');
+    msg.innerHTML = '';
+    try {
+      await API.send('/admin/api/login', 'POST', { senha: document.getElementById('senha').value });
+      document.getElementById('senha').value = '';
+      mostrarPainel(true);
+      carregar();
+    } catch (err) {
+      msg.innerHTML = `<p class="notice error">${esc(err.message)}</p>`;
+    }
+  });
+
+  btnSair.addEventListener('click', async () => {
+    await API.send('/admin/api/logout', 'POST');
+    mostrarPainel(false);
+  });
+
+  // ------------------------------------------------------------ carregar
+  async function carregar() {
+    try {
+      dados = await API.get('/admin/api/chamados');
+    } catch (err) {
+      mostrarPainel(false);
+      return;
+    }
+    renderFiltros();
+    renderLista();
+    renderIndicadores();
+
+    // abre direto o chamado vindo do link da notificação
+    const codigo = new URLSearchParams(location.search).get('chamado');
+    if (codigo && !selecionadoId) {
+      const alvo = dados.chamados.find(c => c.codigo === codigo.toUpperCase());
+      if (alvo) abrirDetalhe(alvo.id);
+    }
+  }
+
+  function renderIndicadores() {
+    const cs = dados.chamados;
+    const abertos = cs.filter(c => !['concluido', 'cancelado'].includes(c.status));
+    const repasse = cs
+      .filter(c => c.status === 'concluido' && !c.repasse_recebido)
+      .reduce((t, c) => t + Number(c.taxa_valor || 0), 0);
+    document.getElementById('statNovos').textContent = cs.filter(c => c.status === 'novo').length;
+    document.getElementById('statAbertos').textContent = abertos.length;
+    document.getElementById('statRepasse').textContent = fmtBRL(repasse);
+    document.getElementById('statConcluidos').textContent = cs.filter(c => c.status === 'concluido').length;
+  }
+
+  function renderFiltros() {
+    const box = document.getElementById('filtros');
+    box.innerHTML = '';
+    FILTROS.forEach(f => {
+      const qtd = f.id ? dados.chamados.filter(c => c.status === f.id).length : dados.chamados.length;
+      const b = el(`<button class="filtro-chip ${filtro === f.id ? 'ativo' : ''}">${esc(f.nome)} (${qtd})</button>`);
+      b.addEventListener('click', () => { filtro = f.id; renderFiltros(); renderLista(); });
+      box.append(b);
+    });
+  }
+
+  function renderLista() {
+    const lista = document.getElementById('lista');
+    const visiveis = dados.chamados.filter(c => !filtro || c.status === filtro);
+    lista.innerHTML = '';
+    document.getElementById('listaVazia').hidden = visiveis.length > 0;
+
+    visiveis.forEach(c => {
+      const servico = dados.servicos.find(s => s.id === c.servico_id);
+      const item = el(`<button class="item-chamado ${c.id === selecionadoId ? 'ativo' : ''}">
+        <div class="topo">
+          <span class="codigo">${esc(c.codigo)}</span>
+          <span class="badge ${esc(c.status)}">${esc(STATUS_LABEL[c.status] || c.status)}</span>
+        </div>
+        ${c.urgente ? '<span class="urgente">URGENTE</span>' : ''}
+        <span class="resumo">${esc(servico?.nome || 'Serviço')} · ${esc(c.bairro)}</span>
+        <span class="meta">${esc(c.cliente_nome)} · aberto ${fmtDataHora(c.criado_em)}</span>
+      </button>`);
+      item.addEventListener('click', () => abrirDetalhe(c.id));
+      lista.append(item);
+    });
+  }
+
+  // ------------------------------------------------------------- detalhe
+  async function abrirDetalhe(id) {
+    selecionadoId = id;
+    renderLista();
+    const box = document.getElementById('detalhe');
+    box.innerHTML = '<div class="panel"><p class="empty">Carregando…</p></div>';
+
+    const c = await API.get('/admin/api/chamados/' + encodeURIComponent(id));
+    const servico = dados.servicos.find(s => s.id === c.servico_id);
+    const prof = dados.profissionais.find(p => p.id === c.profissional_id);
+
+    const quando = c.data_preferida
+      ? `${fmtDate(c.data_preferida)}${c.turno_preferido ? ' · ' + TURNOS[c.turno_preferido] : ''}`
+      : 'sem preferência';
+    const alternativa = c.data_alternativa
+      ? `${fmtDate(c.data_alternativa)}${c.turno_alternativo ? ' · ' + TURNOS[c.turno_alternativo] : ''}`
+      : null;
+
+    const telLimpo = String(c.cliente_telefone).replace(/\D/g, '');
+    const waCliente = `https://wa.me/${telLimpo.length <= 11 ? '55' + telLimpo : telLimpo}`;
+
+    box.innerHTML = `<div class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap">
+        <h2 style="font-size:1.3rem;margin:0">${esc(c.codigo)} ${c.urgente ? '<span class="urgente">· URGENTE</span>' : ''}</h2>
+        <span class="badge ${esc(c.status)}">${esc(STATUS_LABEL[c.status] || c.status)}</span>
+      </div>
+
+      <div class="detalhe-bloco">
+        <h4>Pedido</h4>
+        <div class="campo-linha"><span>Serviço</span><strong>${esc(servico?.nome || c.servico_id)}</strong></div>
+        <div class="campo-linha"><span>Preferência</span><strong>${esc(quando)}</strong></div>
+        ${alternativa ? `<div class="campo-linha"><span>Alternativa</span><strong>${esc(alternativa)}</strong></div>` : ''}
+        <p style="margin-top:10px;background:var(--bg-tint);padding:12px 14px;border-radius:10px;font-size:.93rem">${esc(c.descricao)}</p>
+      </div>
+
+      <div class="detalhe-bloco">
+        <h4>Cliente</h4>
+        <div class="campo-linha"><span>Nome</span><strong>${esc(c.cliente_nome)}</strong></div>
+        <div class="campo-linha"><span>WhatsApp</span><strong><a href="${waCliente}" target="_blank" rel="noopener">${esc(c.cliente_telefone)}</a></strong></div>
+        ${c.cliente_email ? `<div class="campo-linha"><span>E-mail</span><strong>${esc(c.cliente_email)}</strong></div>` : ''}
+        <div class="campo-linha"><span>Endereço</span><strong>${esc(c.endereco)}</strong></div>
+        <div class="campo-linha"><span>Bairro</span><strong>${esc(c.bairro)}</strong></div>
+      </div>
+
+      ${c.fotos.length ? `<div class="detalhe-bloco">
+        <h4>Fotos (${c.fotos.length})</h4>
+        <div class="galeria">
+          ${c.fotos.map((f, i) => `<a href="${esc(f.url)}" target="_blank" rel="noopener">
+            <img src="${esc(f.url)}" alt="Foto ${i + 1} do chamado ${esc(c.codigo)}" loading="lazy">
+          </a>`).join('')}
+        </div>
+      </div>` : ''}
+
+      <div class="detalhe-bloco">
+        <h4>Orçamento e atribuição</h4>
+        <div class="form-row">
+          <label class="field">Valor cobrado do cliente
+            <input type="number" id="fValor" min="0" step="0.01" value="${c.valor_cobrado ?? ''}" placeholder="0,00">
+          </label>
+          <label class="field">Taxa da plataforma (%)
+            <input type="number" id="fTaxa" min="0" max="100" step="0.5" value="${c.taxa_percentual ?? 20}">
+          </label>
+        </div>
+        <div class="form-row" style="margin-top:14px">
+          <label class="field">Profissional
+            <select id="fProf">
+              <option value="">— não atribuído —</option>
+              ${dados.profissionais.map(p => `<option value="${esc(p.id)}" ${p.id === c.profissional_id ? 'selected' : ''}>${esc(p.nome)}</option>`).join('')}
+            </select>
+          </label>
+          <label class="field">Agendado para
+            <input type="datetime-local" id="fAgenda" value="${c.agendado_para ? new Date(c.agendado_para).toISOString().slice(0, 16) : ''}">
+          </label>
+        </div>
+        <label class="field" style="margin-top:14px">Observações internas
+          <textarea id="fObs" placeholder="Anotações da equipe — o cliente não vê.">${esc(c.observacoes_internas || '')}</textarea>
+        </label>
+        <p id="calcTaxa" class="notice info" style="margin-top:12px"></p>
+        <button class="btn btn-primary" id="btnSalvar" style="margin-top:4px">Salvar alterações</button>
+      </div>
+
+      <div class="detalhe-bloco">
+        <h4>Avisar o profissional</h4>
+        <p style="color:var(--text-muted);font-size:.9rem;margin-bottom:12px">
+          Gera a mensagem pronta no WhatsApp com serviço, endereço, horário e o valor dele. Ele não precisa entrar em painel nenhum.
+        </p>
+        <a class="btn btn-cta" id="btnWhats" href="#" target="_blank" rel="noopener">Abrir WhatsApp do profissional</a>
+      </div>
+
+      <div class="detalhe-bloco">
+        <h4>Status</h4>
+        <div class="acoes-linha" id="acoesStatus"></div>
+        ${c.status === 'concluido' ? `<label style="display:flex;gap:10px;align-items:center;margin-top:14px;font-size:.93rem;cursor:pointer">
+          <input type="checkbox" id="fRepasse" ${c.repasse_recebido ? 'checked' : ''} style="width:auto;min-height:0">
+          <span>Repasse da taxa já recebido</span>
+        </label>` : ''}
+      </div>
+    </div>`;
+
+    // --- cálculo do repasse ao vivo ---
+    const fValor = document.getElementById('fValor');
+    const fTaxa = document.getElementById('fTaxa');
+    function recalcular() {
+      const v = Number(fValor.value || 0);
+      const t = Number(fTaxa.value || 0);
+      const taxa = Math.round(v * t) / 100;
+      document.getElementById('calcTaxa').innerHTML =
+        `Cliente paga <strong>${fmtBRL(v)}</strong> ao profissional · ele repassa <strong>${fmtBRL(taxa)}</strong> para vocês · fica com <strong>${fmtBRL(v - taxa)}</strong>.`;
+      atualizarLinkWhats();
+    }
+    fValor.addEventListener('input', recalcular);
+    fTaxa.addEventListener('input', recalcular);
+
+    // --- link de WhatsApp do profissional ---
+    function atualizarLinkWhats() {
+      const profSel = dados.profissionais.find(p => p.id === document.getElementById('fProf').value);
+      const btn = document.getElementById('btnWhats');
+      if (!profSel) {
+        btn.classList.add('btn-outline');
+        btn.classList.remove('btn-cta');
+        btn.textContent = 'Escolha um profissional acima';
+        btn.href = '#';
+        return;
+      }
+      const v = Number(fValor.value || 0);
+      const t = Number(fTaxa.value || 0);
+      const dele = v - Math.round(v * t) / 100;
+      const agenda = document.getElementById('fAgenda').value;
+      const texto = [
+        `Olá, ${profSel.nome}! Serviço novo pelo SeuQuebraGalho (${c.codigo}):`,
+        ``,
+        `${servico?.nome || 'Serviço'} — ${c.descricao}`,
+        `Endereço: ${c.endereco}, ${c.bairro}`,
+        agenda ? `Quando: ${new Date(agenda).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}` : `Preferência do cliente: ${quando}`,
+        `Cliente: ${c.cliente_nome} — ${c.cliente_telefone}`,
+        ``,
+        v ? `Valor do serviço: ${fmtBRL(v)} · você fica com ${fmtBRL(dele)} e repassa ${fmtBRL(v - dele)}.` : `Valor a combinar.`,
+        ``,
+        `Consegue atender? Me confirma por aqui.`
+      ].join('\n');
+      btn.classList.remove('btn-outline');
+      btn.classList.add('btn-cta');
+      btn.textContent = `Abrir WhatsApp de ${profSel.nome.split(' ')[0]}`;
+      btn.href = `https://wa.me/${profSel.telefone}?text=${encodeURIComponent(texto)}`;
+    }
+    document.getElementById('fProf').addEventListener('change', atualizarLinkWhats);
+    document.getElementById('fAgenda').addEventListener('change', atualizarLinkWhats);
+    recalcular();
+
+    // --- salvar ---
+    document.getElementById('btnSalvar').addEventListener('click', async ev => {
+      const btn = ev.currentTarget;
+      btn.disabled = true;
+      btn.textContent = 'Salvando…';
+      const agenda = document.getElementById('fAgenda').value;
+      try {
+        await salvar(c.id, {
+          valor_cobrado: fValor.value === '' ? null : Number(fValor.value),
+          taxa_percentual: Number(fTaxa.value || 0),
+          profissional_id: document.getElementById('fProf').value || null,
+          agendado_para: agenda ? new Date(agenda).toISOString() : null,
+          observacoes_internas: document.getElementById('fObs').value
+        });
+        btn.textContent = 'Salvo!';
+        setTimeout(() => { btn.disabled = false; btn.textContent = 'Salvar alterações'; }, 1500);
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+        btn.textContent = 'Salvar alterações';
+      }
+    });
+
+    // --- transições de status ---
+    const PROXIMOS = {
+      novo: [['em_analise', 'Marcar em análise', 'btn-primary'], ['cancelado', 'Cancelar', 'btn-outline']],
+      em_analise: [['orcado', 'Orçamento enviado', 'btn-primary'], ['cancelado', 'Cancelar', 'btn-outline']],
+      orcado: [['agendado', 'Cliente aprovou — agendar', 'btn-cta'], ['cancelado', 'Cliente recusou', 'btn-outline']],
+      agendado: [['concluido', 'Marcar como concluído', 'btn-cta'], ['cancelado', 'Cancelar', 'btn-outline']],
+      concluido: [],
+      cancelado: [['novo', 'Reabrir chamado', 'btn-outline']]
+    };
+    const acoes = document.getElementById('acoesStatus');
+    (PROXIMOS[c.status] || []).forEach(([status, rotulo, classe]) => {
+      const b = el(`<button class="btn ${classe} btn-sm">${esc(rotulo)}</button>`);
+      b.addEventListener('click', async () => {
+        b.disabled = true;
+        await salvar(c.id, { status });
+        abrirDetalhe(c.id);
+      });
+      acoes.append(b);
+    });
+    if (!(PROXIMOS[c.status] || []).length) {
+      acoes.innerHTML = '<p style="color:var(--text-muted);font-size:.9rem">Chamado encerrado.</p>';
+    }
+
+    const fRepasse = document.getElementById('fRepasse');
+    if (fRepasse) {
+      fRepasse.addEventListener('change', () => salvar(c.id, { repasse_recebido: fRepasse.checked }));
+    }
+  }
+
+  async function salvar(id, mudancas) {
+    const atualizado = await API.send('/admin/api/chamados/' + encodeURIComponent(id), 'PATCH', mudancas);
+    const i = dados.chamados.findIndex(c => c.id === id);
+    if (i >= 0) dados.chamados[i] = atualizado;
+    renderFiltros();
+    renderLista();
+    renderIndicadores();
+    return atualizado;
+  }
+})();
+</script>
+</body>
+</html>
