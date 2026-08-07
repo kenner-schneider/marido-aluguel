@@ -1,3 +1,7 @@
+// Carrega o .env em desenvolvimento. No Render as variáveis vêm do painel e
+// este require simplesmente não encontra arquivo — sem efeito colateral.
+require('dotenv').config();
+
 const express = require('express');
 const path = require('path');
 const multer = require('multer');
