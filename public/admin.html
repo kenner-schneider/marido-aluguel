@@ -96,8 +96,6 @@
     telaPainel.hidden = !logado;
     btnSair.hidden = !logado;
   }
-  mostrarPainel(sessao.logado);
-  if (sessao.logado) { carregar(); ligarAtualizacao(); }
 
   // Busca chamados novos a cada 30 s, sem atrapalhar o que está aberto.
   let timer = null;
@@ -467,6 +465,16 @@
     renderLista();
     renderIndicadores();
     return atualizado;
+  }
+
+  // ---------------------------------------------------------------- arranque
+  // Fica por último de propósito: as funções são içadas, mas as constantes
+  // (TITULO, timer…) não. Chamar antes daqui quebra só para quem abre a página
+  // já com sessão ativa — que foi exatamente o bug que apareceu em produção.
+  mostrarPainel(sessao.logado);
+  if (sessao.logado) {
+    carregar();
+    ligarAtualizacao();
   }
 })();
 </script>
