@@ -3,8 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SeuQuebraGalho — Marido de aluguel para sua casa, sem complicação</title>
-  <meta name="description" content="A maneira mais fácil de contratar um marido de aluguel. Agende reparos, montagem de móveis, elétrica e hidráulica com profissionais avaliados.">
+  <title>SeuQuebraGalho — Serviços e reparos em casa, em Santa Maria/RS</title>
+  <meta name="description" content="Chuveiro, vazamento, montagem de móveis, instalações e reparos em geral em Santa Maria. Descreva o problema, mande uma foto e receba o orçamento no mesmo dia. Marido de aluguel sem complicação.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#101B29">
   <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
@@ -12,12 +16,12 @@
 <header class="nav">
   <div class="container nav-inner">
     <a class="logo" href="/">
-      <svg viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#1E40AF"/><path d="M22.8 9.5a4.6 4.6 0 0 0-5.9 5.6l-6.6 6.6a1.9 1.9 0 0 0 2.7 2.7l6.6-6.6a4.6 4.6 0 0 0 5.6-5.9l-2.6 2.6-2.4-.7-.7-2.4 2.6-2.6z" fill="#fff"/></svg>
+      <svg viewBox="0 0 34 34" fill="none" aria-hidden="true"><rect width="34" height="34" rx="8" fill="#1B2A3F"/><path d="M22.8 9.5a4.6 4.6 0 0 0-5.9 5.6l-6.6 6.6a1.9 1.9 0 0 0 2.7 2.7l6.6-6.6a4.6 4.6 0 0 0 5.6-5.9l-2.6 2.6-2.4-.7-.7-2.4 2.6-2.6z" fill="#F5B301"/></svg>
       <span>SeuQuebra<em>Galho</em></span>
     </a>
     <nav class="nav-links">
       <a href="#como-funciona">Como funciona</a>
-      <a href="#precos">Preços</a>
+      <a href="#servicos">Serviços</a>
       <a href="/equipe.html">Nossa equipe</a>
       <a href="/acompanhar.html">Acompanhar chamado</a>
       <a href="/chamado.html" class="btn btn-cta btn-sm">Pedir orçamento</a>
@@ -28,33 +32,49 @@
 <section class="hero">
   <div class="container hero-grid">
     <div>
-      <h1>Precisa de um <span class="accent">marido de aluguel</span> em Santa Maria? Conta pra gente.</h1>
+      <p class="eyebrow">Santa Maria · RS</p>
+      <h1>Precisa de um <span class="accent">serviço</span> em casa? Conta pra gente.</h1>
       <p class="lead">Chuveiro, vazamento, montagem de móveis, instalações e reparos em geral. Você descreve o problema — se puder, manda uma foto — e devolvemos o orçamento no mesmo dia.</p>
-      <div class="hero-search" style="gap:12px">
-        <a href="/chamado.html" class="btn btn-cta" style="flex:1">Pedir um orçamento</a>
+      <div class="hero-acoes">
+        <a href="/chamado.html" class="btn btn-cta">Pedir um orçamento</a>
         <a href="/acompanhar.html" class="btn btn-outline">Acompanhar chamado</a>
       </div>
-      <div class="hero-rating">
-        <span class="stars" aria-hidden="true">★★★★★</span>
-        <span>Sem compromisso: você só confirma depois de saber o preço.</span>
-      </div>
+      <p class="hero-nota">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F5B301" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>
+        Grátis e sem compromisso. Você só confirma depois de saber o preço.
+      </p>
     </div>
-    <div class="hero-art" aria-hidden="true">
-      <svg viewBox="0 0 420 340" fill="none">
-        <circle cx="210" cy="170" r="150" fill="#DBEAFE"/>
-        <rect x="120" y="120" width="180" height="130" rx="10" fill="#fff" stroke="#BFDBFE" stroke-width="3"/>
-        <path d="M110 128 L210 60 L310 128" stroke="#1E40AF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-        <rect x="185" y="185" width="50" height="65" rx="6" fill="#1E40AF"/>
-        <circle cx="226" cy="218" r="4" fill="#93C5FD"/>
-        <rect x="138" y="145" width="34" height="30" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="2"/>
-        <rect x="248" y="145" width="34" height="30" rx="4" fill="#EFF6FF" stroke="#BFDBFE" stroke-width="2"/>
-        <g transform="rotate(38 320 90)">
-          <rect x="300" y="82" width="66" height="16" rx="8" fill="#F97316"/>
-          <path d="M296 74 a16 16 0 1 0 0 32 l10 -6 v-20 z" fill="#EA580C"/>
-        </g>
-        <circle cx="95" cy="250" r="26" fill="#F97316"/>
-        <path d="M84 250 l8 8 l16 -16" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      </svg>
+
+    <!-- Ordem de serviço: o artefato do negócio, e uma prévia do que a pessoa vai preencher -->
+    <div class="hero-art">
+      <div class="ordem">
+        <div class="ordem-topo">
+          <span>Ordem de serviço</span>
+          <strong>SQG-4823</strong>
+        </div>
+        <div class="ordem-corpo">
+          <div class="ordem-campo">
+            <span>Serviço</span>
+            <strong>Chuveiro e elétrica</strong>
+          </div>
+          <div class="ordem-campo">
+            <span>Problema</span>
+            <p>“Parou de esquentar, acho que é a resistência. Fica na área de serviço.”</p>
+          </div>
+          <div class="ordem-campo">
+            <span>Bairro · preferência</span>
+            <strong>Camobi · quarta, tarde</strong>
+          </div>
+          <div class="ordem-campo">
+            <span>Fotos anexadas</span>
+            <div class="ordem-fotos" aria-hidden="true"><i></i><i></i></div>
+          </div>
+        </div>
+        <div class="ordem-rodape">
+          <span class="ordem-carimbo">Orçado</span>
+          <span class="ordem-valor">R$ 140</span>
+        </div>
+      </div>
     </div>
   </div>
 </section>
@@ -62,69 +82,88 @@
 <section class="section" id="como-funciona">
   <div class="container">
     <h2 class="section-title">É muito fácil resolver</h2>
-    <p class="section-sub">Você não precisa caçar profissional nem ficar pedindo indicação em grupo de bairro. A gente cuida disso:</p>
+    <p class="section-sub">Você não precisa caçar profissional nem pedir indicação em grupo de bairro. A gente cuida disso:</p>
     <div class="steps">
       <article class="step">
-        <div class="step-num">1</div>
+        <div class="step-num">01</div>
         <h3>Conte o que precisa</h3>
         <p>Descreva o problema e, se puder, mande uma foto. Com a foto conseguimos orçar sem precisar de visita técnica.</p>
       </article>
       <article class="step">
-        <div class="step-num">2</div>
+        <div class="step-num">02</div>
         <h3>Receba o orçamento</h3>
         <p>Avaliamos seu pedido e mandamos o valor no seu WhatsApp, no mesmo dia. Sem compromisso: você só confirma se concordar.</p>
       </article>
       <article class="step">
-        <div class="step-num">3</div>
+        <div class="step-num">03</div>
         <h3>A gente resolve</h3>
         <p>Escolhemos o profissional certo da nossa equipe, combinamos o horário com você e acompanhamos até o serviço ficar pronto.</p>
       </article>
     </div>
-    <div style="text-align:center;margin-top:36px">
+    <div style="text-align:center;margin-top:40px">
       <a href="/chamado.html" class="btn btn-cta">Pedir um orçamento</a>
     </div>
   </div>
 </section>
 
-<section class="section section-alt" id="precos">
+<section class="section section-alt" id="servicos">
   <div class="container">
-    <h2 class="section-title">Preço transparente, sem surpresa</h2>
-    <p class="section-sub">Os valores abaixo são a referência de partida. Você recebe o orçamento fechado antes de qualquer coisa acontecer — e o profissional leva as próprias ferramentas.</p>
+    <h2 class="section-title">O que a gente resolve</h2>
+    <p class="section-sub">Cada casa é uma casa: o preço depende do que precisa ser feito e das peças envolvidas. Por isso a gente olha o seu caso antes de falar em valor — e o que a gente combinar é o que você paga no final.</p>
     <div class="price-table-wrap">
       <table class="price-table" id="priceTable">
         <thead>
-          <tr><th>Serviço</th><th>O que está incluso</th><th>A partir de</th></tr>
+          <tr><th>Serviço</th><th>O que está incluso</th></tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
+    <p style="text-align:center;color:var(--text-muted);font-size:.92rem;margin-top:20px">
+      Não achou o que precisa? <a href="/chamado.html">Descreva mesmo assim</a> — se não for com a gente, indicamos quem faz.
+    </p>
   </div>
 </section>
 
 <section class="section">
   <div class="container">
-    <h2 class="section-title">Quem usa, recomenda</h2>
-    <p class="section-sub">Conectamos clientes e profissionais de reparos residenciais com segurança e suporte do início ao fim.</p>
-    <div class="metrics" style="margin-bottom:48px">
-      <div class="metric"><strong>+12.000</strong><span>serviços realizados pela plataforma</span></div>
-      <div class="metric"><strong>+4.500</strong><span>clientes atendidos em Santa Maria e região</span></div>
-      <div class="metric"><strong>93%</strong><span>das avaliações com 4 ou 5 estrelas</span></div>
-    </div>
-    <div class="testimonials">
-      <article class="testimonial">
-        <span class="stars" aria-hidden="true">★★★★★</span>
-        <p>“O Carlos chegou dez minutos antes do horário e resolveu em uma visita o que eu adiava há meses: chuveiro, tomada e a porta do quarto. Impecável.”</p>
-        <footer><div class="avatar" style="width:44px;height:44px;font-size:.9rem">AP</div><div><strong>Ana Paula</strong><span>Cliente — Santa Maria/RS</span></div></footer>
+    <h2 class="section-title">Por que chamar a gente</h2>
+    <p class="section-sub">Somos uma operação local e pequena — e é justamente isso que muda a experiência.</p>
+    <div class="razoes">
+      <article class="razao">
+        <div class="razao-icone">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+        </div>
+        <div>
+          <h3>Equipe conhecida, não sorteio</h3>
+          <p>Quem entra na sua casa é um profissional que nós selecionamos e com quem trabalhamos direto. Não é um desconhecido que o aplicativo escalou.</p>
+        </div>
       </article>
-      <article class="testimonial">
-        <span class="stars" aria-hidden="true">★★★★★</span>
-        <p>“Como profissional, o app me dá agenda cheia sem eu correr atrás de cliente. Recebo certinho e escolho os horários em que quero trabalhar.”</p>
-        <footer><div class="avatar" style="width:44px;height:44px;font-size:.9rem">MS</div><div><strong>Márcio Souza</strong><span>Profissional — Santa Maria/RS</span></div></footer>
+      <article class="razao">
+        <div class="razao-icone">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-4.35-4.35a2 2 0 0 0-2.83 0L6 18"/></svg>
+        </div>
+        <div>
+          <h3>Orçamento pela foto</h3>
+          <p>Na maioria dos casos a foto basta para fechar o valor. Você não perde uma manhã esperando alguém só para olhar o problema.</p>
+        </div>
       </article>
-      <article class="testimonial">
-        <span class="stars" aria-hidden="true">★★★★★</span>
-        <p>“Ter um intermediário na contratação me deu segurança para chamar alguém que eu não conhecia. Montaram o guarda-roupa no tempo combinado.”</p>
-        <footer><div class="avatar" style="width:44px;height:44px;font-size:.9rem">GT</div><div><strong>Guilherme T.</strong><span>Cliente — Santa Maria/RS</span></div></footer>
+      <article class="razao">
+        <div class="razao-icone">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        </div>
+        <div>
+          <h3>Preço combinado antes</h3>
+          <p>Você aprova o valor antes de qualquer coisa acontecer. Nada de conta surpresa no fim do serviço.</p>
+        </div>
+      </article>
+      <article class="razao">
+        <div class="razao-icone">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+        </div>
+        <div>
+          <h3>Daqui de Santa Maria</h3>
+          <p>Atendemos só a cidade e a região. Tem gente de verdade do outro lado do WhatsApp, e você fala sempre com a mesma equipe.</p>
+        </div>
       </article>
     </div>
   </div>
@@ -135,16 +174,16 @@
     <h2 class="section-title">Ficou com alguma dúvida?</h2>
     <div class="faq" style="margin-top:36px">
       <details>
-        <summary>Quais serviços estão inclusos?</summary>
-        <p>Reparos gerais, elétrica, hidráulica, montagem de móveis e instalações (TV, cortinas, prateleiras, quadros). Serviços de grande porte, como reformas, ficam fora do escopo.</p>
-      </details>
-      <details>
         <summary>Preciso pagar alguma coisa para pedir o orçamento?</summary>
         <p>Não. Pedir orçamento é gratuito e sem compromisso. Você recebe o valor no WhatsApp e decide se quer seguir.</p>
       </details>
       <details>
         <summary>Por que vocês pedem foto?</summary>
         <p>Porque com a foto conseguimos fechar o orçamento sem precisar mandar alguém até sua casa só para olhar. Você economiza tempo e nós conseguimos ser mais precisos no preço. Mas é opcional.</p>
+      </details>
+      <details>
+        <summary>Quanto custa um serviço?</summary>
+        <p>Depende do que precisa ser feito, do tempo e das peças. Uma troca de resistência de chuveiro e a instalação de um suporte de TV são trabalhos bem diferentes. Por isso avaliamos o seu caso e mandamos o valor fechado — sem cobrar nada por isso.</p>
       </details>
       <details>
         <summary>Quem vai na minha casa?</summary>
@@ -176,13 +215,13 @@
       <div>
         <h2>É profissional de reparos em Santa Maria? Trabalhe com a gente.</h2>
         <p>Nós trazemos o cliente, fazemos o orçamento e cuidamos da parte chata. Você faz o que sabe fazer e recebe na hora, direto do cliente.</p>
-        <a href="https://wa.me/5555999990000?text=Ol%C3%A1!%20Sou%20profissional%20e%20quero%20trabalhar%20com%20o%20SeuQuebraGalho." class="btn btn-cta" target="_blank" rel="noopener">Falar com a equipe</a>
+        <a href="/chamado.html" class="btn btn-cta">Falar com a equipe</a>
       </div>
       <ul>
-        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Serviço chega pronto no seu WhatsApp</li>
-        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Você já sabe o valor antes de aceitar</li>
-        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Sem app para instalar nem painel para aprender</li>
-        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ADE80" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Recebe direto do cliente na conclusão</li>
+        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5B301" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Serviço chega pronto no seu WhatsApp</li>
+        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5B301" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Você já sabe o valor antes de aceitar</li>
+        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5B301" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Sem app para instalar nem painel para aprender</li>
+        <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#F5B301" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg> Recebe direto do cliente na conclusão</li>
       </ul>
     </div>
   </div>
@@ -193,14 +232,14 @@
     <div class="cols">
       <div>
         <h4>SeuQuebraGalho</h4>
-        <p style="font-size:.92rem;max-width:26rem">Marido de aluguel em Santa Maria/RS. Você conta o problema, a gente orça no mesmo dia e resolve com profissional da nossa equipe.</p>
+        <p style="font-size:.92rem;max-width:26rem">Serviços e reparos residenciais em Santa Maria/RS. Você conta o problema, a gente orça no mesmo dia e resolve com profissional da nossa equipe.</p>
       </div>
       <div>
         <h4>Para clientes</h4>
         <a href="/chamado.html">Pedir orçamento</a>
         <a href="/acompanhar.html">Acompanhar chamado</a>
         <a href="/equipe.html">Nossa equipe</a>
-        <a href="#precos">Tabela de preços</a>
+        <a href="#servicos">O que resolvemos</a>
       </div>
       <div>
         <h4>Para profissionais</h4>
@@ -218,9 +257,8 @@
   const tbody = document.querySelector('#priceTable tbody');
   cfg.servicos.forEach(s => {
     tbody.append(el(`<tr>
-      <td><strong>${esc(s.nome)}</strong></td>
+      <td>${esc(s.nome)}</td>
       <td class="desc">${esc(s.descricao)}</td>
-      <td class="price">${s.preco_base ? fmtBRL(s.preco_base) : 'sob orçamento'}</td>
     </tr>`));
   });
 })();

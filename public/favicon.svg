@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="SeuQuebraGalho">
+  <rect width="64" height="64" rx="14" fill="#1B2A3F"/>
+  <!-- chave de boca ajustável, engrossada para continuar legível a 16px -->
+  <path d="M44.5 15.2a10.4 10.4 0 0 0-13.3 12.6L15.9 43.1a4.3 4.3 0 0 0 6.1 6.1l15.3-15.3a10.4 10.4 0 0 0 12.6-13.3l-6.1 6.1-5.4-1.5-1.5-5.4z"
+        fill="#F5B301"/>
+</svg>
