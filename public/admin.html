@@ -93,7 +93,24 @@
     btnSair.hidden = !logado;
   }
   mostrarPainel(sessao.logado);
-  if (sessao.logado) carregar();
+  if (sessao.logado) { carregar(); ligarAtualizacao(); }
+
+  // Busca chamados novos a cada 30 s, sem atrapalhar o que está aberto.
+  let timer = null;
+  function ligarAtualizacao() {
+    if (timer) return;
+    timer = setInterval(async () => {
+      if (document.getElementById('telaPainel').hidden) return;
+      try {
+        const novo = await API.get('/admin/api/chamados');
+        const mudou = novo.chamados.length !== dados.chamados.length
+          || novo.chamados.some((c, i) => c.status !== dados.chamados[i]?.status);
+        dados = novo;
+        renderIndicadores();
+        if (mudou) { renderFiltros(); renderLista(); }
+      } catch { /* sessão caiu ou rede oscilou: a próxima tentativa resolve */ }
+    }, 30000);
+  }
 
   document.getElementById('formLogin').addEventListener('submit', async e => {
     e.preventDefault();
@@ -104,6 +121,7 @@
       document.getElementById('senha').value = '';
       mostrarPainel(true);
       carregar();
+      ligarAtualizacao();
     } catch (err) {
       msg.innerHTML = `<p class="notice error">${esc(err.message)}</p>`;
     }
@@ -134,8 +152,32 @@
     }
   }
 
+  // Enquanto o Discord não está configurado, o próprio painel avisa: recarrega
+  // sozinho e mostra a contagem no título da aba. Basta deixar uma aba fixada.
+  const TITULO = 'Painel interno — SeuQuebraGalho';
+  let novosConhecidos = null;
+
+  function avisarNoTitulo(qtdNovos) {
+    document.title = qtdNovos > 0 ? `(${qtdNovos}) ${TITULO}` : TITULO;
+    // toca só quando aparece chamado novo depois da primeira carga
+    if (novosConhecidos !== null && qtdNovos > novosConhecidos) {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain); gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.start(); osc.stop(ctx.currentTime + 0.4);
+      } catch { /* navegador bloqueou áudio sem interação; tudo bem */ }
+    }
+    novosConhecidos = qtdNovos;
+  }
+
   function renderIndicadores() {
     const cs = dados.chamados;
+    avisarNoTitulo(cs.filter(c => c.status === 'novo').length);
     const abertos = cs.filter(c => !['concluido', 'cancelado'].includes(c.status));
     const repasse = cs
       .filter(c => c.status === 'concluido' && !c.repasse_recebido)
