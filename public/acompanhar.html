@@ -58,13 +58,44 @@
     { id: 'concluido',  titulo: 'Concluído',         texto: 'Serviço finalizado. Obrigado pela confiança!' }
   ];
 
-  if (params.get('novo')) {
-    document.getElementById('banner').innerHTML =
-      '<p class="notice success">Pedido enviado! Nossa equipe já foi avisada e responde no seu WhatsApp em breve. Guarde o código abaixo.</p>';
-  }
-
   const salvo = params.get('codigo') || localStorage.getItem('sqg_codigo');
   if (salvo) input.value = salvo;
+
+  // Acabou de abrir o chamado: o código precisa ficar impossível de ignorar.
+  // Sem ele (e em outro aparelho), o cliente não tem como voltar aqui.
+  if (params.get('novo') && salvo) {
+    const banner = document.getElementById('banner');
+    banner.innerHTML = `
+      <p class="notice success">Pedido enviado! Nossa equipe já foi avisada e vai falar com você pelo WhatsApp.</p>
+      <div class="codigo-destaque">
+        <span class="rotulo">Seu código de acompanhamento</span>
+        <span class="valor" id="codigoValor">${esc(salvo)}</span>
+        <div class="acoes">
+          <button type="button" class="btn btn-cta btn-sm" id="btnCopiar">Copiar código</button>
+          <button type="button" class="btn btn-outline btn-sm" id="btnPrint">Imprimir / salvar PDF</button>
+        </div>
+        <p><strong>Anote ou tire um print agora.</strong> É com esse código que você consulta o andamento do serviço aqui no site. Neste aparelho ele fica salvo automaticamente, mas em outro celular ou navegador você vai precisar dele.</p>
+      </div>`;
+
+    document.getElementById('btnCopiar').addEventListener('click', async ev => {
+      try {
+        await navigator.clipboard.writeText(salvo);
+        ev.target.textContent = 'Copiado!';
+      } catch {
+        // navegador sem permissão de área de transferência: seleciona para o
+        // usuário copiar na mão, em vez de deixar o botão sem efeito
+        const faixa = document.createRange();
+        faixa.selectNodeContents(document.getElementById('codigoValor'));
+        const sel = getSelection();
+        sel.removeAllRanges();
+        sel.addRange(faixa);
+        ev.target.textContent = 'Selecionado — copie';
+      }
+      setTimeout(() => { ev.target.textContent = 'Copiar código'; }, 2500);
+    });
+
+    document.getElementById('btnPrint').addEventListener('click', () => window.print());
+  }
 
   async function consultar() {
     const codigo = input.value.trim().toUpperCase();

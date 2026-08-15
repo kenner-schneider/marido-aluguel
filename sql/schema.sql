@@ -51,9 +51,9 @@ create table if not exists public.chamados (
 
   -- quando
   data_preferida      date,
-  turno_preferido     text        check (turno_preferido in ('manha','tarde')),
+  turno_preferido     text        check (turno_preferido in ('manha','tarde','noite')),
   data_alternativa    date,
-  turno_alternativo   text        check (turno_alternativo in ('manha','tarde')),
+  turno_alternativo   text        check (turno_alternativo in ('manha','tarde','noite')),
 
   -- onde e quem  (dado pessoal: nunca sai em notificação, só no painel)
   cliente_nome        text        not null,

@@ -399,6 +399,25 @@ input:focus, select:focus, textarea:focus { border-color: var(--primary-light); 
 }
 .preview-remove:hover { background: var(--danger); }
 
+/* ---------- destaque do código do chamado ---------- */
+.codigo-destaque {
+  background: var(--surface); border: 2px solid var(--cta); border-radius: var(--radius);
+  padding: 24px; margin-bottom: 24px; text-align: center;
+}
+.codigo-destaque .rotulo {
+  font-family: 'IBM Plex Mono', monospace; font-size: .7rem; font-weight: 600;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--text-muted);
+  display: block; margin-bottom: 12px;
+}
+.codigo-destaque .valor {
+  font-family: 'IBM Plex Mono', monospace; font-weight: 600;
+  font-size: clamp(1.9rem, 7vw, 2.6rem); letter-spacing: .04em; color: var(--text);
+  display: block; line-height: 1.1;
+}
+.codigo-destaque .acoes { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; margin: 18px 0 14px; }
+.codigo-destaque p { color: var(--text-muted); font-size: .92rem; max-width: 30rem; margin: 0 auto; }
+.codigo-destaque p strong { color: var(--text); }
+
 /* ---------- linha do tempo do chamado ---------- */
 .linha-tempo { list-style: none; padding: 0; margin: 0; }
 .passo { display: flex; gap: 14px; padding-bottom: 22px; position: relative; }

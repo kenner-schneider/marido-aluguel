@@ -115,7 +115,7 @@ app.post('/api/chamados', limiteChamado, upload.array('fotos', MAX_ARQUIVOS), as
     if (!b.endereco?.trim() || !b.bairro?.trim()) {
       return res.status(400).json({ error: 'Informe o endereço e o bairro.' });
     }
-    const turnos = ['manha', 'tarde'];
+    const turnos = ['manha', 'tarde', 'noite'];
     if (b.turno_preferido && !turnos.includes(b.turno_preferido)) {
       return res.status(400).json({ error: 'Turno inválido.' });
     }
