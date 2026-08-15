@@ -11,6 +11,7 @@ const cookieParser = require('cookie-parser');
 const store = require('./lib/store');
 const storage = require('./lib/storage');
 const { processarImagens, MAX_ARQUIVOS, MAX_BYTES } = require('./lib/uploads');
+const limites = require('./lib/limites');
 const { notificarNovoChamado } = require('./lib/notify');
 const auth = require('./lib/auth');
 
@@ -51,7 +52,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 const limiteChamado = rateLimit({
   windowMs: 60 * 60 * 1000,
-  max: 5,                                   // 5 chamados por hora por IP
+  // chamados por hora por IP — ajustável sem mexer no código.
+  // Se um prédio inteiro sair pelo mesmo IP, pode ser preciso aumentar.
+  max: Number(process.env.CHAMADOS_POR_HORA || 5),
   message: { error: 'Muitos chamados enviados. Tente novamente mais tarde.' },
   standardHeaders: true,
   legacyHeaders: false
@@ -86,7 +89,8 @@ function baseUrl(req) {
 app.get('/api/config', limiteConsulta, async (req, res, next) => {
   try {
     const servicos = await store.listarServicos();
-    res.json({ servicos, cidade: 'Santa Maria', maxFotos: MAX_ARQUIVOS });
+    // limites vão junto: o formulário aplica os mesmos números que o servidor
+    res.json({ servicos, cidade: 'Santa Maria', maxFotos: MAX_ARQUIVOS, limites: limites.paraCliente() });
   } catch (err) { next(err); }
 });
 
@@ -106,33 +110,39 @@ app.post('/api/chamados', limiteChamado, upload.array('fotos', MAX_ARQUIVOS), as
 
     // ---- validação (o servidor nunca confia no que veio do formulário) ----
     if (!servico) return res.status(400).json({ error: 'Escolha um serviço.' });
-    if (!b.descricao || b.descricao.trim().length < 10) {
-      return res.status(400).json({ error: 'Descreva o que precisa ser feito (mínimo 10 caracteres).' });
-    }
-    if (!b.cliente_nome?.trim() || !b.cliente_telefone?.trim()) {
-      return res.status(400).json({ error: 'Informe seu nome e telefone.' });
-    }
-    if (!b.endereco?.trim() || !b.bairro?.trim()) {
-      return res.status(400).json({ error: 'Informe o endereço e o bairro.' });
-    }
+
+    // Recusa em vez de cortar: endereço truncado leva o profissional ao lugar errado
+    const erro = limites.validarTodos(b, [
+      'descricao', 'cliente_nome', 'cliente_telefone', 'cliente_email', 'endereco', 'bairro'
+    ]);
+    if (erro) return res.status(400).json({ error: erro });
+
     const turnos = ['manha', 'tarde', 'noite'];
     if (b.turno_preferido && !turnos.includes(b.turno_preferido)) {
       return res.status(400).json({ error: 'Turno inválido.' });
     }
+    if (b.turno_alternativo && !turnos.includes(b.turno_alternativo)) {
+      return res.status(400).json({ error: 'Turno inválido.' });
+    }
+    for (const campo of ['data_preferida', 'data_alternativa']) {
+      if (b[campo] && !/^\d{4}-\d{2}-\d{2}$/.test(b[campo])) {
+        return res.status(400).json({ error: 'Data inválida.' });
+      }
+    }
 
     const dados = {
       servico_id: servico.id,
-      descricao: b.descricao.trim().slice(0, 2000),
+      descricao: b.descricao.trim(),
       urgente: b.urgente === 'true' || b.urgente === 'on',
       data_preferida: b.data_preferida || null,
       turno_preferido: turnos.includes(b.turno_preferido) ? b.turno_preferido : null,
       data_alternativa: b.data_alternativa || null,
       turno_alternativo: turnos.includes(b.turno_alternativo) ? b.turno_alternativo : null,
-      cliente_nome: b.cliente_nome.trim().slice(0, 120),
-      cliente_telefone: b.cliente_telefone.trim().slice(0, 30),
-      cliente_email: b.cliente_email?.trim().toLowerCase().slice(0, 160) || null,
-      endereco: b.endereco.trim().slice(0, 240),
-      bairro: b.bairro.trim().slice(0, 80),
+      cliente_nome: b.cliente_nome.trim(),
+      cliente_telefone: b.cliente_telefone.trim(),
+      cliente_email: b.cliente_email?.trim().toLowerCase() || null,
+      endereco: b.endereco.trim(),
+      bairro: b.bairro.trim(),
       taxa_percentual: TAXA_PADRAO
     };
 
@@ -171,6 +181,9 @@ app.post('/api/chamados', limiteChamado, upload.array('fotos', MAX_ARQUIVOS), as
 /** Acompanhamento pelo código — devolve só o status, nunca o dado pessoal. */
 app.get('/api/chamados/:codigo', limiteConsulta, async (req, res, next) => {
   try {
+    const erroCodigo = limites.validar('codigo', req.params.codigo);
+    if (erroCodigo) return res.status(400).json({ error: 'Código inválido. Confira e tente de novo.' });
+
     const c = await store.obterChamadoPorCodigo(req.params.codigo);
     if (!c) return res.status(404).json({ error: 'Chamado não encontrado. Confira o código.' });
     const servicos = await store.listarServicos();
@@ -238,9 +251,30 @@ app.patch('/admin/api/chamados/:id', auth.exigirAdmin, async (req, res, next) =>
     if (req.body.status && !permitidos.includes(req.body.status)) {
       return res.status(400).json({ error: 'Status inválido' });
     }
+
     const valor = req.body.valor_cobrado;
-    if (valor !== undefined && valor !== null && (isNaN(Number(valor)) || Number(valor) < 0)) {
-      return res.status(400).json({ error: 'Valor inválido' });
+    if (valor !== undefined && valor !== null && valor !== '') {
+      const n = Number(valor);
+      if (isNaN(n) || n < 0 || n > 1000000) {
+        return res.status(400).json({ error: 'Valor deve ser entre 0 e 1.000.000.' });
+      }
+    }
+
+    const taxa = req.body.taxa_percentual;
+    if (taxa !== undefined && taxa !== null && taxa !== '') {
+      const n = Number(taxa);
+      if (isNaN(n) || n < 0 || n > 100) {
+        return res.status(400).json({ error: 'Taxa deve ser entre 0 e 100%.' });
+      }
+    }
+
+    if (req.body.observacoes_internas !== undefined) {
+      const erroObs = limites.validar('observacoes_internas', req.body.observacoes_internas);
+      if (erroObs) return res.status(400).json({ error: erroObs });
+    }
+
+    if (req.body.agendado_para && isNaN(new Date(req.body.agendado_para).getTime())) {
+      return res.status(400).json({ error: 'Data de agendamento inválida.' });
     }
 
     const atualizado = await store.atualizarChamado(req.params.id, req.body);

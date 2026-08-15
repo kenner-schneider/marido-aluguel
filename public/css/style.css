@@ -310,6 +310,14 @@ input, select, textarea {
 textarea { min-height: 80px; resize: vertical; }
 input:focus, select:focus, textarea:focus { border-color: var(--primary-light); }
 
+/* contador de caracteres: fala o mínimo antes, o restante depois */
+.contador {
+  font-family: 'IBM Plex Mono', monospace; font-size: .78rem; font-weight: 500;
+  color: var(--text-muted); display: block; margin-top: -2px;
+}
+.contador.faltando { color: var(--warning); }
+.contador.no-limite { color: var(--danger); }
+
 .slot-grid { display: flex; flex-wrap: wrap; gap: 10px; }
 .slot {
   padding: 10px 16px; border: 1.5px solid var(--border); border-radius: 10px; background: var(--surface);

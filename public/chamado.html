@@ -42,8 +42,9 @@
     <p id="servicoDesc" class="notice info" style="margin:-8px 0 0" hidden></p>
 
     <label class="field">Descreva o problema
-      <textarea id="descricao" required minlength="10" maxlength="2000"
+      <textarea id="descricao" required
         placeholder="Ex.: o chuveiro parou de esquentar, acho que é a resistência. É um Lorenzetti na área de serviço."></textarea>
+      <span class="contador" id="contadorDescricao"></span>
     </label>
 
     <fieldset style="border:none;padding:0">
@@ -145,6 +146,37 @@
     desc.textContent = s?.descricao || '';
     desc.hidden = !s?.descricao;
   });
+
+  // ---- limites: vêm do servidor, então formulário e API nunca divergem ----
+  const L = cfg.limites;
+  Object.entries(L).forEach(([campo, regra]) => {
+    const el = document.getElementById(campo);
+    if (!el) return;
+    el.maxLength = regra.max;
+    if (regra.min > 0 && el.required) el.minLength = regra.min;
+  });
+
+  // contador da descrição: avisa o mínimo antes de digitar e o teto no fim
+  const descricao = document.getElementById('descricao');
+  const contador = document.getElementById('contadorDescricao');
+  function atualizarContador() {
+    const n = descricao.value.trim().length;
+    const { min, max } = L.descricao;
+    contador.classList.remove('faltando', 'no-limite');
+    if (n === 0) {
+      contador.textContent = `Mínimo de ${min} caracteres.`;
+    } else if (n < min) {
+      contador.textContent = `Faltam ${min - n} caractere${min - n > 1 ? 's' : ''} para o mínimo de ${min}.`;
+      contador.classList.add('faltando');
+    } else if (n > max - 100) {
+      contador.textContent = `${n} de ${max} caracteres.`;
+      contador.classList.add('no-limite');
+    } else {
+      contador.textContent = `${n} caracteres — pode detalhar à vontade (até ${max}).`;
+    }
+  }
+  descricao.addEventListener('input', atualizarContador);
+  atualizarContador();
 
   // ---- datas: nada no passado ----
   const hoje = new Date().toISOString().slice(0, 10);
