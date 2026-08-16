@@ -24,11 +24,19 @@ on conflict (id) do update
       ordem      = excluded.ordem;
 
 -- ---------------------------------------------------------------------
--- Profissionais  — SUBSTITUA pelos reais da equipe
--- telefone no formato E.164 sem '+': 55 + DDD + número
+-- Profissionais — equipe real
+--
+-- PREENCHA OS TELEFONES antes de usar: formato E.164 sem '+',
+-- ou seja 55 + DDD + número (ex.: 5555999998888). Sem o telefone, o botão
+-- "Abrir WhatsApp do profissional" no painel não tem para quem mandar.
+--
+-- As especialidades alimentam as etiquetas em /equipe.html. Valores
+-- possíveis: chuveiro, hidraulica, montagem, instalacao, reparos.
 -- ---------------------------------------------------------------------
 insert into public.profissionais (nome, telefone, especialidades) values
-  ('Carlos Andrade', '5555999990001', array['chuveiro','instalacao','reparos']),
-  ('Márcio Souza',   '5555999990002', array['chuveiro','hidraulica','reparos']),
-  ('Edson Ferreira', '5555999990003', array['montagem','instalacao','reparos'])
+  ('Luan Henrique Gruetzmann Schmechel',  '', array[]::text[]),
+  ('Victor Fernando Demétrio dos Santos', '', array[]::text[]),
+  ('Vitor Silva de Borba',                '', array[]::text[]),
+  ('Eduardo Mateus da rosa da Silva',     '', array[]::text[]),
+  ('William Vargas Leal',                 '', array[]::text[])
 on conflict do nothing;

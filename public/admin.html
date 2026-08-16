@@ -380,6 +380,14 @@
         btn.href = '#';
         return;
       }
+      // sem telefone o link do WhatsApp abriria sem destinatário e sem avisar
+      if (!profSel.telefone) {
+        btn.classList.add('btn-outline');
+        btn.classList.remove('btn-cta');
+        btn.textContent = `${profSel.nome.split(' ')[0]} está sem telefone cadastrado`;
+        btn.href = '#';
+        return;
+      }
       const v = Number(fValor.value || 0);
       const t = Number(fTaxa.value || 0);
       const dele = v - Math.round(v * t) / 100;
