@@ -138,11 +138,13 @@ app.post('/api/chamados', limiteChamado, upload.array('fotos', MAX_ARQUIVOS), as
       turno_preferido: turnos.includes(b.turno_preferido) ? b.turno_preferido : null,
       data_alternativa: b.data_alternativa || null,
       turno_alternativo: turnos.includes(b.turno_alternativo) ? b.turno_alternativo : null,
-      cliente_nome: b.cliente_nome.trim(),
-      cliente_telefone: b.cliente_telefone.trim(),
-      cliente_email: b.cliente_email?.trim().toLowerCase() || null,
+      // normalizado: o banco guarda um formato só, não cinco variações do
+      // mesmo telefone. limites.normalizar já rodou a validação acima.
+      cliente_nome: limites.normalizar('cliente_nome', b.cliente_nome),
+      cliente_telefone: limites.normalizar('cliente_telefone', b.cliente_telefone),
+      cliente_email: limites.normalizar('cliente_email', b.cliente_email) || null,
       endereco: b.endereco.trim(),
-      bairro: b.bairro.trim(),
+      bairro: limites.normalizar('bairro', b.bairro),
       taxa_percentual: TAXA_PADRAO
     };
 
@@ -184,7 +186,8 @@ app.get('/api/chamados/:codigo', limiteConsulta, async (req, res, next) => {
     const erroCodigo = limites.validar('codigo', req.params.codigo);
     if (erroCodigo) return res.status(400).json({ error: 'Código inválido. Confira e tente de novo.' });
 
-    const c = await store.obterChamadoPorCodigo(req.params.codigo);
+    // aceita sqg-5120 como o cliente digitou; o banco guarda em maiúscula
+    const c = await store.obterChamadoPorCodigo(limites.normalizar('codigo', req.params.codigo));
     if (!c) return res.status(404).json({ error: 'Chamado não encontrado. Confira o código.' });
     const servicos = await store.listarServicos();
     res.json({

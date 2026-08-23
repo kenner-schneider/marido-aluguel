@@ -94,12 +94,14 @@
         <input type="text" id="cliente_nome" required placeholder="Nome completo">
       </label>
       <label class="field">WhatsApp
-        <input type="tel" id="cliente_telefone" required placeholder="(55) 99999-9999">
+        <input type="tel" id="cliente_telefone" required inputmode="tel"
+               autocomplete="tel" placeholder="(55) 99999-9999">
       </label>
     </div>
 
     <label class="field">E-mail <span style="font-weight:400;color:var(--text-muted)">(opcional)</span>
-      <input type="email" id="cliente_email" placeholder="voce@email.com">
+      <input type="email" id="cliente_email" inputmode="email"
+             autocomplete="email" placeholder="voce@email.com">
     </label>
 
     <!-- Fotos -->
@@ -154,6 +156,22 @@
     if (!el) return;
     el.maxLength = regra.max;
     if (regra.min > 0 && el.required) el.minLength = regra.min;
+  });
+
+  // ---- máscara do telefone ----
+  // O servidor é quem decide o que vale (lib/limites.js); isto só guia a
+  // digitação, para o cliente não descobrir o erro depois de enviar tudo.
+  const telefone = document.getElementById('cliente_telefone');
+  telefone.addEventListener('input', () => {
+    const d = telefone.value.replace(/\D/g, '').slice(0, 11);
+    if (!d) { telefone.value = ''; return; }
+    if (d.length <= 2) telefone.value = `(${d}`;
+    else if (d.length <= 6) telefone.value = `(${d.slice(0, 2)}) ${d.slice(2)}`;
+    else {
+      // 11 dígitos = celular (5 antes do hífen); 10 = fixo (4 antes)
+      const corte = d.length > 10 ? 7 : 6;
+      telefone.value = `(${d.slice(0, 2)}) ${d.slice(2, corte)}-${d.slice(corte)}`;
+    }
   });
 
   // contador da descrição: avisa o mínimo antes de digitar e o teto no fim
