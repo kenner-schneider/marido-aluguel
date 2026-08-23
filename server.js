@@ -340,6 +340,10 @@ app.listen(PORT, () => {
   console.log(`\nSeuQuebraGalho rodando em http://localhost:${PORT}`);
   console.log(`  Banco:        ${store.usandoSupabase ? 'Supabase' : 'JSON local (data/chamados.json)'}`);
   console.log(`  Imagens:      ${storage.usandoSupabase ? 'Supabase Storage' : 'data/uploads (fora do público)'}`);
-  console.log(`  Notificação:  ${process.env.DISCORD_WEBHOOK_URL ? 'Discord' : 'console (webhook não configurado)'}`);
+  const canais = [
+    (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) && 'Telegram',
+    process.env.DISCORD_WEBHOOK_URL && 'Discord'
+  ].filter(Boolean);
+  console.log(`  Notificação:  ${canais.length ? canais.join(' + ') : 'console (nenhum canal configurado)'}`);
   if (auth.SENHA_PADRAO) console.log('  ⚠ ADMIN_PASSWORD não definida — usando senha padrão de desenvolvimento\n');
 });
