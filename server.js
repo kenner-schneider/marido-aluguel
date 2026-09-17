@@ -19,6 +19,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const TAXA_PADRAO = Number(process.env.TAXA_PERCENTUAL || 20);
 
+// Measurement ID do Google Analytics 4. Vazio = Analytics desligado, e é esse
+// o padrão: sem a variável no ambiente o CSP abaixo continua sem nenhum
+// domínio do Google e /js/ga.js vem vazio. A máquina de desenvolvimento e
+// qualquer cópia local ficam fora dos relatórios sem precisar de gambiarra.
+//
+// Só aceitamos o formato de measurement ID. Um GTM-XXXXXXX (container do Tag
+// Manager) ou um ID colado com espaço do painel entraria no HTML e quebraria
+// calado — aqui ele é recusado e aparece no log de inicialização.
+const GA4_ID_BRUTO = (process.env.GA4_ID || '').trim();
+const GA4_ID = /^G-[A-Z0-9]{4,}$/i.test(GA4_ID_BRUTO) ? GA4_ID_BRUTO : '';
+
 app.set('trust proxy', 1); // Render/Cloudflare: IP real para o rate limit
 app.use(express.json());
 app.use(cookieParser());
@@ -26,6 +37,21 @@ app.use(cookieParser());
 // Cabeçalhos de segurança. O CSP é restritivo: nada de script externo, e
 // as imagens (conteúdo enviado por terceiros) só podem vir de origem própria
 // ou do Supabase Storage.
+// Com GA4_ID vazio a política sai igual à de antes do Analytics existir — o
+// Google não entra na lista "por precaução", entra quando está em uso.
+//
+// NÃO liberamos doubleclick.net nem google.com.br: eles só são procurados
+// quando o Google Signals está ligado no painel do GA4, e ele precisa ficar
+// desligado — é o que sustenta o que a página de privacidade promete. Se
+// alguém ligar, aparece erro de CSP no console, que é o aviso, não o bug.
+const CSP_GOOGLE = GA4_ID
+  ? {
+      script: ' https://www.googletagmanager.com',
+      img: ' https://www.google-analytics.com https://www.googletagmanager.com',
+      connect: "connect-src 'self' https://*.google-analytics.com https://*.analytics.google.com https://www.googletagmanager.com; "
+    }
+  : { script: '', img: '', connect: '' };
+
 app.use((req, res, next) => {
   res.setHeader('X-Content-Type-Options', 'nosniff');
   res.setHeader('X-Frame-Options', 'DENY');
@@ -35,13 +61,27 @@ app.use((req, res, next) => {
     "default-src 'self'; " +
     // blob: é necessário para a prévia local das fotos antes do envio —
     // são URLs criadas pela própria página, não vêm de fora.
-    "img-src 'self' data: blob: https://*.supabase.co; " +
+    "img-src 'self' data: blob: https://*.supabase.co" + CSP_GOOGLE.img + "; " +
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
     "font-src https://fonts.gstatic.com; " +
-    "script-src 'self' 'unsafe-inline'; " +
+    "script-src 'self' 'unsafe-inline'" + CSP_GOOGLE.script + "; " +
+    CSP_GOOGLE.connect +
     "form-action 'self'; frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
   );
   next();
+});
+
+// O measurement ID chega ao navegador por aqui, não hardcoded em cinco HTMLs.
+// Sem GA4_ID o corpo vem vazio e /js/analytics.js não faz nada — um arquivo
+// só decide se o site está medindo.
+//
+// Vem antes do express.static de propósito: não existe public/js/ga.js, e não
+// deve passar a existir.
+app.get('/js/ga.js', (req, res) => {
+  res.type('application/javascript; charset=utf-8');
+  // curto: trocar o ID no painel do Render não pode esbarrar em cache velho
+  res.setHeader('Cache-Control', 'public, max-age=300');
+  res.send(GA4_ID ? `window.SQG_GA4_ID=${JSON.stringify(GA4_ID)};` : '');
 });
 
 // IMPORTANTE: data/uploads NÃO fica dentro de public — imagem enviada por
@@ -348,5 +388,7 @@ app.listen(PORT, () => {
     process.env.DISCORD_WEBHOOK_URL && 'Discord'
   ].filter(Boolean);
   console.log(`  Notificação:  ${canais.length ? canais.join(' + ') : 'console (nenhum canal configurado)'}`);
+  console.log(`  Analytics:    ${GA4_ID || 'desligado (GA4_ID não definida)'}`);
+  if (GA4_ID_BRUTO && !GA4_ID) console.log(`  ⚠ GA4_ID="${GA4_ID_BRUTO}" não parece um measurement ID (G-XXXXXXX) — Analytics segue desligado`);
   if (auth.SENHA_PADRAO) console.log('  ⚠ ADMIN_PASSWORD não definida — usando senha padrão de desenvolvimento\n');
 });

@@ -129,10 +129,15 @@
     <p style="font-size:.85rem;color:var(--text-muted)">
       Sem compromisso: avaliamos seu pedido e mandamos o orçamento pelo WhatsApp. Você só confirma se concordar com o valor.
       Ao enviar, você recebe um <strong>código de acompanhamento</strong> — guarde ele para consultar o andamento aqui no site.
+      Seus dados são usados só para o atendimento: veja <a href="/privacidade.html">privacidade e cookies</a>.
     </p>
   </form>
 </div>
 
+<!-- Analytics: /js/ga.js vem do servidor e só traz o ID em produção;
+     sem ele o analytics.js carrega e não faz nada. -->
+<script src="/js/ga.js"></script>
+<script src="/js/analytics.js"></script>
 <script src="/js/app.js"></script>
 <script>
 (async function () {
@@ -293,6 +298,23 @@
       const data = await r.json();
       if (!r.ok) throw new Error(data.error || 'Não foi possível enviar o pedido.');
       localStorage.setItem('sqg_codigo', data.codigo);
+      // A conversão do site. Fica anotada aqui e dispara na página seguinte:
+      // este redirect acontece rápido demais para confiar que o gtag já
+      // carregou. Sem código do chamado, sem nome, sem telefone — só o que
+      // responde "qual serviço as pessoas pedem".
+      //
+      // try/catch próprio, e não é paranoia: daqui para baixo o chamado JÁ
+      // existe no servidor. Se a medição estourasse, ela cairia no catch do
+      // envio, o cliente veria "não foi possível enviar" e mandaria de novo —
+      // um chamado duplicado por causa de uma estatística. Medição nunca
+      // derruba conversão.
+      try {
+        window.sqgEventoNaSaida?.('chamado_enviado', {
+          servico: sel.options[sel.selectedIndex]?.textContent || '',
+          urgente: document.getElementById('urgente').checked
+        });
+      } catch {}
+
       location.href = '/acompanhar.html?codigo=' + encodeURIComponent(data.codigo) + '&novo=1';
     } catch (err) {
       msg.innerHTML = `<p class="notice error">${esc(err.message)}</p>`;
